@@ -147,6 +147,7 @@ def wrf_grid(
     if lon_0 != grid_centre_lon:
         print 'not implemented yet -> see the source'
         return
+
     width   = nx * delta_x
     height  = ny * delta_y
     frame_x = 10 * delta_x
@@ -163,7 +164,9 @@ def wrf_grid(
       lat_1 = lat_1,
       lat_2 = lat_2,
       width = width + 2*frame_x,
-      height = height + 2*frame_y
+      height = height + 2*frame_y,
+      resolution = 'l',
+      area_thresh=1000.
       )
     grid_centre_x, grid_centre_y = m(grid_centre_lon, grid_centre_lat)
     min_x = grid_centre_x - width/2.
@@ -193,6 +196,7 @@ def wrf_grid(
             m.plot(X_u, Y_u, 'g+')
             m.plot(X_v, Y_v, 'r+')
         m.drawcoastlines()
+	p.show()
     output = {
       'map' : m,
       'mass_stag': {
@@ -220,6 +224,7 @@ def wrf_grid(
         'y_2d'   : Y_v,
         } 
       }
+
     return output
       
 
@@ -270,4 +275,98 @@ def find_parent_ij(outer_grid, inner_grid):
 
     return outer_x.searchsorted(inner_x[0]), outer_y.searchsorted(inner_y[0])
 
+def read_namelist(namelist_file):
+    """read contents of namelist file and return dictionary containing all options
+    
+    Created 20/01/01 by Thom Chubb.
 
+    TODO: mod_levs have a slightly different format in the namelist file, but as 
+    they come last in namelist.wps I have conveniently dropped them (with a warning
+    of course =) ). Whoever needs them first can come up with a fix for this.
+    Untested as yet with the namelist.input file. It should work fine and may be useful 
+    as a consistency check between the two files. This has been buggine me for a while.
+    """
+
+    fid=open(namelist_file)
+
+    out_dict={}
+    data = fid.readlines()
+    num_lines = len(data)
+
+    for k in range(0,num_lines):
+	str = data[k].rstrip('\n').rstrip(',').split()
+
+	if str == []:
+	    pass
+	elif str[0] == '':
+	    pass
+	elif str[0][0] == '/' or str[0][0] == '':
+	    pass
+	elif str[0][0] == '&':
+	    # Then this line is a namelist title
+	    label = str[0]
+
+	    if label == '&mod_levs':
+		print ">> WARNING: mod levels don't work yet"
+		break
+
+	    out_dict[label] ={}
+
+	else: 
+	    
+	    field = str[0]
+	    out_dict[label][field] = [] 
+
+	    for k in range(2,str.__len__()):
+		dat = str[k].rstrip(',')
+		try:
+		    dat=float(dat)
+		except ValueError:
+		    pass
+
+		out_dict[label][field].append(dat) 
+	    
+	    # out_dict[label][field] = [] 
+	    # out_dict[label][field].append(str[2:])
+
+    return out_dict
+
+def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
+    """Basic wrapper to easily visualise grids specified in namelist.wps
+    
+    Uses wrf.utils.read_namelist() to determine the read the appropriate variables 
+    in a specified namelist file and then calls wrf.utils.wrf_grid() to define 
+    the Basemap projection and show the grid over a map.
+
+    Created 20/01/08 by Thom Chubb.
+
+    TODO: wrf_grid() has a very basic visualisation routine and there is no 
+    scope yet to view all grids simultaneously. Could use viz.utils.plot_grid() 
+    with wrf.utils.wrf2latlon() as an intermediate, but the application works well
+    enough for now.
+    """
+
+    # Create namelist dictionary
+    nd = read_namelist(namelist_file)
+
+    # Field editing to make python happy
+    if nd['&geogrid']['map_proj'][0]=="'lambert'":
+	print 'debug: modify input field lambert -> lcc' 
+	nd['&geogrid']['map_proj'][0]='lcc'
+
+    # Create wrf grid
+    grd = wrf_grid(nd['&geogrid']['map_proj'][0],
+			nd['&geogrid']['truelat1'][0], 
+			nd['&geogrid']['truelat2'][0],
+			nd['&geogrid']['stand_lon'][0],
+			nd['&geogrid']['ref_lat'][0],
+			nd['&geogrid']['ref_lon'][0],
+			nd['&geogrid']['dx'][0],
+			nd['&geogrid']['dy'][0],
+			nd['&geogrid']['e_we'][nest_level],
+			nd['&geogrid']['e_sn'][nest_level],
+			show_mass_grid = True,
+			show_stag_grids = False)
+
+
+    
