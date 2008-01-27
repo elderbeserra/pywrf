@@ -199,12 +199,24 @@ def plot_grid(lon,lat,
         else:
             p.figure(figsize=figsize)
     map.plot(lon[::skip,::skip], lat[::skip,::skip], marker=marker, linestyle='None')
-    corners_lon = n.array([lon[0,0], lon[0,-1], lon[-1,-1], lon[-1,0]])
-    corners_lat = n.array([lat[0,0], lat[0,-1], lat[-1,-1], lat[-1,0]])
+
+
+#    Thom: Added repeat lon/lat[0,0] in these arrays to allow plotting of the domain
+#    boundaries with a solid line
+    corners_lon = n.array([lon[0,0], lon[0,-1], lon[-1,-1], lon[-1,0], lon[0,0]])
+    corners_lat = n.array([lat[0,0], lat[0,-1], lat[-1,-1], lat[-1,0], lat[0,0]])
+#    corners_lon = n.array([lon[0,0], lon[0,-1], lon[-1,-1], lon[-1,0]])
+#    corners_lat = n.array([lat[0,0], lat[0,-1], lat[-1,-1], lat[-1,0]])
+    
     map.plot(corners_lon,corners_lat, 'ro')
-    canberra_lon = [149 + 8./60]
-    canberra_lat = [-35 - 17./60]
-    map.plot(canberra_lon,canberra_lat, 'gs')
+
+#    Thom: following line plots the domain boundaries with a solid line
+    map.plot(corners_lon,corners_lat, 'k-')
+
+#    Thom: I've taken out the plot canberra option for generality
+#    canberra_lon = [149 + 8./60]
+#    canberra_lat = [-35 - 17./60]
+#    map.plot(canberra_lon,canberra_lat, 'gs')
 
     if not same_figure:
         map.drawcoastlines()
