@@ -346,6 +346,8 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     enough for now.
     """
 
+    import pywrf.viz.utils as vu 
+
     # Create namelist dictionary
     nd = read_namelist(namelist_file)
 
@@ -355,19 +357,42 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 	nd['&geogrid']['map_proj'][0]='lcc'
 
     # Create wrf grid
-    grd = wrf_grid(nd['&geogrid']['map_proj'][0],
-			nd['&geogrid']['truelat1'][0], 
-			nd['&geogrid']['truelat2'][0],
-			nd['&geogrid']['stand_lon'][0],
-			nd['&geogrid']['ref_lat'][0],
-			nd['&geogrid']['ref_lon'][0],
-			nd['&geogrid']['dx'][0],
-			nd['&geogrid']['dy'][0],
-			nd['&geogrid']['e_we'][nest_level],
-			nd['&geogrid']['e_sn'][nest_level],
-			show_mass_grid = True,
-			show_stag_grids = False)
+#    grd = wrf_grid(nd['&geogrid']['map_proj'][0],
+#			nd['&geogrid']['truelat1'][0], 
+#			nd['&geogrid']['truelat2'][0],
+#			nd['&geogrid']['stand_lon'][0],
+#			nd['&geogrid']['ref_lat'][0],
+#			nd['&geogrid']['ref_lon'][0],
+#			nd['&geogrid']['dx'][0],
+#			nd['&geogrid']['dy'][0],
+#			nd['&geogrid']['e_we'][nest_level],
+#			nd['&geogrid']['e_sn'][nest_level],
+#			show_mass_grid = True,
+#			show_stag_grids = False)
 
+    for k in nest_level:
+
+	grid_data = wrf2latlon(nd['&geogrid']['map_proj'][0],
+		    nd['&geogrid']['ref_lat'][0],
+		    nd['&geogrid']['ref_lon'][0],
+		    nd['&geogrid']['truelat1'][0], 
+		    nd['&geogrid']['truelat2'][0],
+		    nd['&geogrid']['ref_lon'][0],
+		    nd['&geogrid']['ref_lat'][0],
+		    nd['&geogrid']['e_we'][k],
+		    nd['&geogrid']['e_sn'][k],
+		    nd['&geogrid']['dx'][0],
+		    staggered = False,
+		    return_extra = True
+		    )
+
+	vu.plot_grid(grid_data[0],grid_data[1],skip=1000) 
+
+
+
+
+    return grid_data
+ 
 
 def calculate_slp(p,pb,ph,phb,t,qvapor):
     '''
