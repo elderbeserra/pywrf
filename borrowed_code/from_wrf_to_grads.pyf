@@ -1,0 +1,63 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module from_wrf_to_grads ! in 
+    interface  ! in :from_wrf_to_grads
+        module from_wrf_to_grads ! in :from_wrf_to_grads:from_wrf_to_grads.f90
+            subroutine interp_to_z(data_in,nx_in,ny_in,nz_in,data_out,nx_out,ny_out,nz_out,z_in,z_out,missing_value,vertical_type,debug) ! in :from_wrf_to_grads:from_wrf_to_grads.f90:from_wrf_to_grads
+                real dimension(nx_in,ny_in,nz_in),intent(in) :: data_in
+                integer optional,intent(in),check(shape(data_in,0)==nx_in),depend(data_in) :: nx_in=shape(data_in,0)
+                integer optional,intent(in),check(shape(data_in,1)==ny_in),depend(data_in) :: ny_in=shape(data_in,1)
+                integer optional,intent(in),check(shape(data_in,2)==nz_in),depend(data_in) :: nz_in=shape(data_in,2)
+                real dimension(nx_out,ny_out,nz_out),intent(out),depend(nx_out,ny_out,nz_out) :: data_out
+                integer intent(in) :: nx_out
+                integer intent(in) :: ny_out
+                integer optional,intent(in),check(len(z_out)>=nz_out),depend(z_out) :: nz_out=len(z_out)
+                real dimension(nx_in,ny_in,nz_in),intent(in),depend(nx_in,ny_in,nz_in) :: z_in
+                real dimension(nz_out),intent(in) :: z_out
+                real intent(in) :: missing_value
+                character*1 :: vertical_type
+                logical intent(in) :: debug
+            end subroutine interp_to_z
+            subroutine interp_1d(a,xa,na,b,xb,nb,vertical_type,missing_value) ! in :from_wrf_to_grads:from_wrf_to_grads.f90:from_wrf_to_grads
+                real dimension(na),intent(in) :: a
+                real dimension(na),intent(in),depend(na) :: xa
+                integer optional,intent(in),check(len(a)>=na),depend(a) :: na=len(a)
+                real dimension(nb),intent(out),depend(nb) :: b
+                real dimension(nb),intent(in) :: xb
+                integer optional,intent(in),check(len(xb)>=nb),depend(xb) :: nb=len(xb)
+                character*1 :: vertical_type
+                real intent(in) :: missing_value
+            end subroutine interp_1d
+            subroutine compute_seaprs(nx,ny,nz,z,t,p,q,sea_level_pressure,debug) ! in :from_wrf_to_grads:from_wrf_to_grads.f90:from_wrf_to_grads
+                integer optional,check(shape(z,0)==nx),depend(z) :: nx=shape(z,0)
+                integer optional,check(shape(z,1)==ny),depend(z) :: ny=shape(z,1)
+                integer optional,check(shape(z,2)==nz),depend(z) :: nz=shape(z,2)
+                real dimension(nx,ny,nz),intent(in) :: z
+                real dimension(nx,ny,nz),intent(in),depend(nx,ny,nz) :: t
+                real dimension(nx,ny,nz),intent(in),depend(nx,ny,nz) :: p
+                real dimension(nx,ny,nz),intent(in),depend(nx,ny,nz) :: q
+                real dimension(nx,ny),intent(out),depend(nx,ny) :: sea_level_pressure
+                logical intent(in) :: debug
+            end subroutine compute_seaprs
+            subroutine rotate_wind(u,v,d1,d2,d3,var,map_proj,cen_lon,xlat,xlon,truelat1,truelat2,data_out) ! in :from_wrf_to_grads:from_wrf_to_grads.f90:from_wrf_to_grads
+                real dimension(d1,d2,d3) :: u
+                real dimension(d1,d2,d3),depend(d1,d2,d3) :: v
+                integer optional,intent(in),check(shape(u,0)==d1),depend(u) :: d1=shape(u,0)
+                integer optional,intent(in),check(shape(u,1)==d2),depend(u) :: d2=shape(u,1)
+                integer optional,intent(in),check(shape(u,2)==d3),depend(u) :: d3=shape(u,2)
+                character*10 intent(in) :: var
+                integer :: map_proj
+                real :: cen_lon
+                real dimension(d1,d2),depend(d1,d2) :: xlat
+                real dimension(d1,d2),depend(d1,d2) :: xlon
+                real :: truelat1
+                real :: truelat2
+                real dimension(d1,d2,d3),depend(d1,d2,d3) :: data_out
+            end subroutine rotate_wind
+        end module from_wrf_to_grads
+    end interface 
+end python module from_wrf_to_grads
+
+! This file was auto-generated with f2py (version:2_3493).
+! See http://cens.ioc.ee/projects/f2py2e/

@@ -146,14 +146,14 @@ def wrf_grid(
   ):
     if lon_0 != grid_centre_lon:
         print 'not implemented yet -> see the source'
-        return
+        print "\tbut let's try it anyways..."
+        #return
 
     width   = nx * delta_x
     height  = ny * delta_y
     frame_x = 10 * delta_x
     frame_y = 10 * delta_y
     m = Basemap(
-      projection = projection,
       lat_0 = grid_centre_lat,
       # this could be a bad assumption... because lon_0 and grid_centre_lon
       # need not be aligned, but at the same time I need to give this to
@@ -369,4 +369,57 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 			show_stag_grids = False)
 
 
-    
+def calculate_slp(p,pb,ph,phb,t,qvapor):
+    '''
+    calculate sea level pressure starting from 'raw' wrf output fields
+    usage:
+    >>> calculate_slp(p,pb,ph,phb,t,qvapor)
+    where the arguments names correspond to the variable names in the 
+    wrfout files e.g. p(lvl,lat,lon) or p(time,lvl,lat,lon)
+    '''
+    import  from_wrf_to_grads as fw2g
+    cs = fw2g.from_wrf_to_grads.compute_seaprs
+
+    if len(p.shape) == 3:
+       # recover the full pressure field by adding perturbation and base
+       p = p + pb
+       p_t = p.transpose()
+       # same geopotential height
+       ph = (ph + phb) / 9.81
+       ph_t = ph.transpose()
+       qvapor_t = qvapor.transpose()
+       # do not add the wrf specified 300 factor as the wrapped fortran code
+       # does that for us
+       t_t = t.transpose()
+       nz = ph_t.shape[2]
+       # populate the geopotential_height at mid_levels array with
+       # averages between layers below and above
+       z = (ph_t[:,:,:nz-1] + ph_t[:,:,1:nz]) / 2.0
+       # finally "in one fell sweep"
+       # the zero is for debug purposes
+       return cs(z,t_t,p_t,qvapor_t,0).transpose()
+    elif len(p.shape) == 4:
+       slp_shape = (p.shape[0], p.shape[2], p.shape[3])
+       slp = n.zeros(slp_shape)
+       for time_idx in range(p.shape[0]):
+           # recover the full pressure field by adding perturbation and base
+           dummy_p = p[time_idx] + pb[time_idx]
+           dummy_p_t = dummy_p.transpose()
+           # same geopotential height
+           dummy_ph = (ph[time_idx] + phb[time_idx]) / 9.81
+           dummy_ph_t = dummy_ph.transpose()
+           dummy_qvapor_t = qvapor[time_idx].transpose()
+           # do not add the wrf specified 300 factor as the wrapped fortran code
+           # does that for us
+           dummy_t_t = t[time_idx].transpose()
+           nz = dummy_ph_t.shape[2]
+           # populate the geopotential_height at mid_levels array with
+           # averages between layers below and above
+           z = (dummy_ph_t[:,:,:nz-1] + dummy_ph_t[:,:,1:nz]) / 2.0
+           # finally "in one fell sweep"
+           # the zero is for debug purposes
+           slp[time_idx] = cs(z,dummy_t_t,dummy_p_t,dummy_qvapor_t,0).transpose()
+       return slp
+    else:
+       print 'Wrong shape of the array'
+       return

@@ -1,0 +1,13 @@
+# Author: Valerio Bisignanesi
+# Date: 26 Jan 2008
+
+# NB: these commands were executed in the borrowed code directory and the .so
+# file that was generated as a result moved to the wrf directory to be used by
+# the utils module in there.
+# Refer to document "F2PY Users Guide and Reference Manual" to understand what
+# the commands do.
+
+f2py from_wrf_to_grads.f90 -m from_wrf_to_grads -h from_wrf_to_grads.pyf
+vim from_wrf_to_grads.pyf 
+f2py -c --help-fcompiler
+f2py -c from_wrf_to_grads.pyf from_wrf_to_grads.f90 --fcompiler=gnu95
