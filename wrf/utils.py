@@ -370,29 +370,72 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 #			show_mass_grid = True,
 #			show_stag_grids = False)
 
-    for k in nest_level:
+#    for k in nest_level:
+#
+#	grid_data = wrf2latlon(nd['&geogrid']['map_proj'][0],
+#		    nd['&geogrid']['ref_lat'][0],
+#		    nd['&geogrid']['ref_lon'][0],
+#		    nd['&geogrid']['truelat1'][0], 
+#		    nd['&geogrid']['truelat2'][0],
+#		    nd['&geogrid']['ref_lon'][0],
+#		    nd['&geogrid']['ref_lat'][0],
+#		    nd['&geogrid']['e_we'][k],
+#		    nd['&geogrid']['e_sn'][k],
+#		    nd['&geogrid']['dx'][0],
+#		    staggered = False,
+#		    return_extra = True
+#		    )
+#
+#	map=vu.plot_grid(grid_data[0],grid_data[1],skip=1000,same_figure=True,return_map=True) 
+#	# map=vu.plot_grid(grid_data[0],grid_data[1],skip=1000,same_figure=True) 
 
-	grid_data = wrf2latlon(nd['&geogrid']['map_proj'][0],
+    nest_level.sort()
+    
+
+
+    grid = []
+
+    outer_grid = wrf2latlon(nd['&geogrid']['map_proj'][0],
 		    nd['&geogrid']['ref_lat'][0],
 		    nd['&geogrid']['ref_lon'][0],
 		    nd['&geogrid']['truelat1'][0], 
 		    nd['&geogrid']['truelat2'][0],
 		    nd['&geogrid']['ref_lon'][0],
 		    nd['&geogrid']['ref_lat'][0],
-		    nd['&geogrid']['e_we'][k],
-		    nd['&geogrid']['e_sn'][k],
+		    nd['&geogrid']['e_we'][nest_level[0]],
+		    nd['&geogrid']['e_sn'][nest_level[0]],
 		    nd['&geogrid']['dx'][0],
 		    staggered = False,
 		    return_extra = True
 		    )
+    print "outer_grid.shape =", outer_grid[0].shape
 
-	vu.plot_grid(grid_data[0],grid_data[1],skip=1000) 
+    grid.append(outer_grid)
+    pgr = 1
+    for k in nest_level[1:]:
+	this_grid = []
+	e_we = nd['&geogrid']['e_we'][k]
+	e_sn = nd['&geogrid']['e_sn'][k]
+	newpgr  = nd['&geogrid']['parent_grid_ratio'][k]
+	pgr = newpgr*pgr 
+	ips  = nd['&geogrid']['i_parent_start'][k]
+	jps  = nd['&geogrid']['j_parent_start'][k]
+	print e_we,e_sn,pgr,ips,jps
+	print jps,':',(jps+(e_sn/pgr)),',',ips,':',(ips+(e_we/pgr))
+	this_grid.append(n.array([grid[-1][0][jps:jps+e_sn/pgr, ips:ips+e_we/pgr]]).squeeze())
+	this_grid.append(n.array([grid[-1][1][jps:jps+e_sn/pgr, ips:ips+e_we/pgr]]).squeeze())
+	# this_grid.append(n.array([outer_grid[0][60:100,132:156]]).squeeze())
+	# this_grid.append(n.array([outer_grid[1][60:100,132:156]]).squeeze())
+	map=vu.plot_grid(this_grid[0],this_grid[1],skip=10,same_figure=True,return_map=True) 
+	grid.append(this_grid)	
+	print grid[-1][0].shape 
 
 
-
-
-    return grid_data
- 
+    map=vu.plot_grid(outer_grid[0],outer_grid[1],skip=10,same_figure=True,return_map=True) 
+    map.drawcoastlines()
+    p.show()
+    
+    # return grid
 
 def calculate_slp(p,pb,ph,phb,t,qvapor):
     '''
