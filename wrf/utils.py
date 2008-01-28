@@ -4,6 +4,7 @@ import matplotlib.numerix.ma as ma
 import numpy as n
 from string import zfill
 from matplotlib.toolkits.basemap import Basemap
+import pywrf.viz.utils as vu
 
 a_small_number = 1e-8
 
@@ -339,14 +340,13 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     the Basemap projection and show the grid over a map.
 
     Created 20/01/08 by Thom Chubb.
+    Modified 27/01/08 - implemented viz.utils.plot_grid() to handle plotting and 
+    capability for viewing as many grids as desired.
 
-    TODO: wrf_grid() has a very basic visualisation routine and there is no 
-    scope yet to view all grids simultaneously. Could use viz.utils.plot_grid() 
-    with wrf.utils.wrf2latlon() as an intermediate, but the application works well
-    enough for now.
-    """
-
-    import pywrf.viz.utils as vu 
+    TODO: Could use some more error checking, i think it will all fail if nest_levels
+    are not consecutive!! Interpolation implemented is awkward but seems to work.
+	
+	""" 
 
     # Create namelist dictionary
     nd = read_namelist(namelist_file)
@@ -355,44 +355,7 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     if nd['&geogrid']['map_proj'][0]=="'lambert'":
 	print 'debug: modify input field lambert -> lcc' 
 	nd['&geogrid']['map_proj'][0]='lcc'
-
-    # Create wrf grid
-#    grd = wrf_grid(nd['&geogrid']['map_proj'][0],
-#			nd['&geogrid']['truelat1'][0], 
-#			nd['&geogrid']['truelat2'][0],
-#			nd['&geogrid']['stand_lon'][0],
-#			nd['&geogrid']['ref_lat'][0],
-#			nd['&geogrid']['ref_lon'][0],
-#			nd['&geogrid']['dx'][0],
-#			nd['&geogrid']['dy'][0],
-#			nd['&geogrid']['e_we'][nest_level],
-#			nd['&geogrid']['e_sn'][nest_level],
-#			show_mass_grid = True,
-#			show_stag_grids = False)
-
-#    for k in nest_level:
-#
-#	grid_data = wrf2latlon(nd['&geogrid']['map_proj'][0],
-#		    nd['&geogrid']['ref_lat'][0],
-#		    nd['&geogrid']['ref_lon'][0],
-#		    nd['&geogrid']['truelat1'][0], 
-#		    nd['&geogrid']['truelat2'][0],
-#		    nd['&geogrid']['ref_lon'][0],
-#		    nd['&geogrid']['ref_lat'][0],
-#		    nd['&geogrid']['e_we'][k],
-#		    nd['&geogrid']['e_sn'][k],
-#		    nd['&geogrid']['dx'][0],
-#		    staggered = False,
-#		    return_extra = True
-#		    )
-#
-#	map=vu.plot_grid(grid_data[0],grid_data[1],skip=1000,same_figure=True,return_map=True) 
-#	# map=vu.plot_grid(grid_data[0],grid_data[1],skip=1000,same_figure=True) 
-
-    nest_level.sort()
     
-
-
     grid = []
 
     outer_grid = wrf2latlon(nd['&geogrid']['map_proj'][0],
@@ -411,31 +374,51 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     print "outer_grid.shape =", outer_grid[0].shape
 
     grid.append(outer_grid)
-    pgr = 1
+
     for k in nest_level[1:]:
 	this_grid = []
 	e_we = nd['&geogrid']['e_we'][k]
 	e_sn = nd['&geogrid']['e_sn'][k]
-	newpgr  = nd['&geogrid']['parent_grid_ratio'][k]
-	pgr = newpgr*pgr 
+	pgr  = nd['&geogrid']['parent_grid_ratio'][k]
 	ips  = nd['&geogrid']['i_parent_start'][k]
 	jps  = nd['&geogrid']['j_parent_start'][k]
 	print e_we,e_sn,pgr,ips,jps
 	print jps,':',(jps+(e_sn/pgr)),',',ips,':',(ips+(e_we/pgr))
-	this_grid.append(n.array([grid[-1][0][jps:jps+e_sn/pgr, ips:ips+e_we/pgr]]).squeeze())
-	this_grid.append(n.array([grid[-1][1][jps:jps+e_sn/pgr, ips:ips+e_we/pgr]]).squeeze())
-	# this_grid.append(n.array([outer_grid[0][60:100,132:156]]).squeeze())
-	# this_grid.append(n.array([outer_grid[1][60:100,132:156]]).squeeze())
+	
+	# Interpolate in grid space to estimate inner gridpoints - 
+	# care to find a more elegant approach???
+	x1=grid[-1][2][jps, ips:ips+e_we/pgr]
+	y1=grid[-1][3][jps:jps+e_sn/pgr, ips]
+	
+	a1=n.arange(0,x1.__len__(),1) 
+	a2=n.arange(0,x1.__len__(),1./pgr)
+	b1=n.arange(0,y1.__len__(),1)
+	b2=n.arange(0,y1.__len__(),1./pgr)
+
+	x2=n.interp(a2,a1,x1)
+	y2=n.interp(b2,b1,y1)
+
+	[X,Y]=n.meshgrid(x2,y2)
+
+	# convert back to navigational coordinates
+	lon,lat=grid[-1][4](X,Y,nd['&geogrid']['map_proj'])
+
+	for k in [lon,lat,X,Y,grid[-1][4]]:
+	    this_grid.append(k)
+	
 	map=vu.plot_grid(this_grid[0],this_grid[1],skip=10,same_figure=True,return_map=True) 
 	grid.append(this_grid)	
 	print grid[-1][0].shape 
 
 
     map=vu.plot_grid(outer_grid[0],outer_grid[1],skip=10,same_figure=True,return_map=True) 
+    map.drawmeridians(n.arange(130,180,15),labels=[1,0,0,1])
+    map.drawparallels(n.arange(0,-90,-15),labels=[1,0,0,1])
     map.drawcoastlines()
+    map.drawrivers()
     p.show()
     
-    # return grid
+    return grid
 
 def calculate_slp(p,pb,ph,phb,t,qvapor):
     '''
