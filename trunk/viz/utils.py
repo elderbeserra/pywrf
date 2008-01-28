@@ -2,7 +2,7 @@
 repo of useful functions for visualizing stuff
 """
 
-import PyNGL_numpy.Nio as nio
+# import PyNGL_numpy.Nio as nio
 import pylab as p
 import matplotlib.numerix.ma as ma
 import numpy as n
@@ -200,18 +200,15 @@ def plot_grid(lon,lat,
             p.figure(figsize=figsize)
     map.plot(lon[::skip,::skip], lat[::skip,::skip], marker=marker, linestyle='None')
 
-
-#    Thom: Added repeat lon/lat[0,0] in these arrays to allow plotting of the domain
-#    boundaries with a solid line
-    corners_lon = n.array([lon[0,0], lon[0,-1], lon[-1,-1], lon[-1,0], lon[0,0]])
-    corners_lat = n.array([lat[0,0], lat[0,-1], lat[-1,-1], lat[-1,0], lat[0,0]])
-#    corners_lon = n.array([lon[0,0], lon[0,-1], lon[-1,-1], lon[-1,0]])
-#    corners_lat = n.array([lat[0,0], lat[0,-1], lat[-1,-1], lat[-1,0]])
+    corners_lon = n.array([lon[0,0], lon[0,-1], lon[-1,-1], lon[-1,0]])
+    corners_lat = n.array([lat[0,0], lat[0,-1], lat[-1,-1], lat[-1,0]])
     
     map.plot(corners_lon,corners_lat, 'ro')
 
-#    Thom: following line plots the domain boundaries with a solid line
-    map.plot(corners_lon,corners_lat, 'k-')
+    map.plot(lon[0,:],lat[0,:],'k-')
+    map.plot(lon[:,-1],lat[:,-1],'k-')
+    map.plot(lon[-1,:],lat[-1,:],'k-')
+    map.plot(lon[:,0],lat[:,0],'k-')
 
 #    Thom: I've taken out the plot canberra option for generality
 #    canberra_lon = [149 + 8./60]
