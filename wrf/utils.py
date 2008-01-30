@@ -374,6 +374,7 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     print "outer_grid.shape =", outer_grid[0].shape
 
     grid.append(outer_grid)
+    nest_level.sort()
 
     for k in nest_level[1:]:
 	this_grid = []
@@ -382,8 +383,9 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 	pgr  = nd['&geogrid']['parent_grid_ratio'][k]
 	ips  = nd['&geogrid']['i_parent_start'][k]
 	jps  = nd['&geogrid']['j_parent_start'][k]
+	print k
 	print e_we,e_sn,pgr,ips,jps
-	print jps,':',(jps+(e_sn/pgr)),',',ips,':',(ips+(e_we/pgr))
+	print ips,':',(ips+(e_we/pgr)),',', jps,':',(jps+(e_sn/pgr))
 	
 	# Interpolate in grid space to estimate inner gridpoints - 
 	# care to find a more elegant approach???
@@ -408,7 +410,7 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 	
 	map=vu.plot_grid(this_grid[0],this_grid[1],skip=10,same_figure=True,return_map=True) 
 	grid.append(this_grid)	
-	print grid[-1][0].shape 
+	# print grid[-1][0].shape 
 
 
     map=vu.plot_grid(outer_grid[0],outer_grid[1],skip=10,same_figure=True,return_map=True) 
