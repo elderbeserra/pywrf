@@ -333,7 +333,9 @@ def read_namelist(namelist_file):
     return out_dict
 
 def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
-    """Basic wrapper to easily visualise grids specified in namelist.wps
+    """
+    wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
+    Basic wrapper to easily visualise grids specified in namelist.wps
     
     Uses wrf.utils.read_namelist() to determine the read the appropriate variables 
     in a specified namelist file and then calls wrf.utils.wrf_grid() to define 
@@ -365,27 +367,35 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 		    nd['&geogrid']['truelat2'][0],
 		    nd['&geogrid']['ref_lon'][0],
 		    nd['&geogrid']['ref_lat'][0],
-		    nd['&geogrid']['e_we'][nest_level[0]],
-		    nd['&geogrid']['e_sn'][nest_level[0]],
+#		    nd['&geogrid']['e_we'][nest_level[0]],
+#		    nd['&geogrid']['e_sn'][nest_level[0]],
+		    nd['&geogrid']['e_we'][0],
+		    nd['&geogrid']['e_sn'][0],
 		    nd['&geogrid']['dx'][0],
 		    staggered = False,
 		    return_extra = True
 		    )
-    print "outer_grid.shape =", outer_grid[0].shape
+    # print "outer_grid.shape =", outer_grid[0].shape
 
     grid.append(outer_grid)
     nest_level.sort()
+    # nest_level=p.sort(nest_level)
 
-    for k in nest_level[1:]:
+    # for k in nest_level[1:]:
+    for k in range(1,max(nest_level)+1):
 	this_grid = []
-	e_we = nd['&geogrid']['e_we'][k]
+	try:
+	    e_we = nd['&geogrid']['e_we'][k]
+	except IndexError:
+	    print "Out of range. Not enough grids specified within namelist file"
+	    return 1
 	e_sn = nd['&geogrid']['e_sn'][k]
 	pgr  = nd['&geogrid']['parent_grid_ratio'][k]
 	ips  = nd['&geogrid']['i_parent_start'][k]
 	jps  = nd['&geogrid']['j_parent_start'][k]
-	print k
-	print e_we,e_sn,pgr,ips,jps
-	print ips,':',(ips+(e_we/pgr)),',', jps,':',(jps+(e_sn/pgr))
+	print 'processing grid: ',k
+	# print e_we,e_sn,pgr,ips,jps
+	# print ips,':',(ips+(e_we/pgr)),',', jps,':',(jps+(e_sn/pgr))
 	
 	# Interpolate in grid space to estimate inner gridpoints - 
 	# care to find a more elegant approach???
@@ -405,22 +415,24 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
 	# convert back to navigational coordinates
 	lon,lat=grid[-1][4](X,Y,nd['&geogrid']['map_proj'])
 
-	for k in [lon,lat,X,Y,grid[-1][4]]:
-	    this_grid.append(k)
-	
-	map=vu.plot_grid(this_grid[0],this_grid[1],skip=10,same_figure=True,return_map=True) 
+	for j in [lon,lat,X,Y,grid[-1][4]]:
+	    this_grid.append(j)
+	if (k in nest_level):	
+	    map=vu.plot_grid(this_grid[0],this_grid[1],skip=10,same_figure=True,return_map=True) 
 	grid.append(this_grid)	
 	# print grid[-1][0].shape 
 
 
-    map=vu.plot_grid(outer_grid[0],outer_grid[1],skip=10,same_figure=True,return_map=True) 
+    if 0 in nest_level:
+	map=vu.plot_grid(outer_grid[0],outer_grid[1],skip=10,same_figure=True,return_map=True) 
     map.drawmeridians(n.arange(130,180,15),labels=[1,0,0,1])
     map.drawparallels(n.arange(0,-90,-15),labels=[1,0,0,1])
     map.drawcoastlines()
     map.drawrivers()
+    plot_custom_points(map)
     p.show()
     
-    return grid
+    return grid, map
 
 def calculate_slp(p,pb,ph,phb,t,qvapor):
     '''
@@ -476,3 +488,15 @@ def calculate_slp(p,pb,ph,phb,t,qvapor):
     else:
        print 'Wrong shape of the array'
        return
+
+def plot_custom_points(map):
+    """back by popular demand"""
+
+#    canberra_lon = [149 + 8./60]
+#    canberra_lat = [-35 - 17./60]
+#    map.plot(canberra_lon,canberra_lat, 'gs')
+
+    blue_calf_lon = [148.3944] 
+    blue_calf_lat = [-36.3869]  
+    map.plot(blue_calf_lon,blue_calf_lat, 'gs')
+    return
