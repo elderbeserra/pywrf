@@ -299,6 +299,51 @@ def read_namelist(namelist_file):
     """read contents of namelist file and return dictionary containing all options
     
     Created 20/01/08 by Thom Chubb.
+    Modified 20/01/08 by Thom Chubb and Valerio Bisignesi
+
+    TODO: mod_levs have a slightly different format in the namelist file, but as 
+    they come last in namelist.wps I have conveniently dropped them (with a warning
+    of course =) ). Whoever needs them first can come up with a fix for this.
+    Untested as yet with the namelist.input file. It should work fine and may be useful 
+    as a consistency check between the two files. This has been buggine me for a while.
+    """
+
+    fid=open(namelist_file)
+
+    out_dict={}
+    data = fid.readlines()
+    num_lines = len(data)
+
+    for line in data:
+	if '&' in line:
+	    # Then this line is a namelist title
+	    is_comment=False
+	    current_label = line.rstrip('\n').lstrip(' ')
+	    out_dict[current_label] ={}
+	elif '/' in line:
+	    # Then lines following this are comments until the next '&'
+	    is_comment=True
+	elif '=' in line:
+	    # Then this line contains variable information to be stored
+	    if not is_comment:
+		variable,values = line.split('=')
+		values = values.rstrip('\n').rstrip(',')
+		try:
+		    values=[int(element) for element in values.split(',')]
+		except ValueError:
+		    try:
+			values=[float(element) for element in values.split(',')]
+		    except ValueError:
+			values=values.split(',')
+
+		out_dict[current_label][variable.strip()]=values
+
+    return out_dict
+
+def read_namelist_old(namelist_file):
+    """read contents of namelist file and return dictionary containing all options
+    
+    Created 20/01/08 by Thom Chubb.
 
     TODO: mod_levs have a slightly different format in the namelist file, but as 
     they come last in namelist.wps I have conveniently dropped them (with a warning
@@ -342,19 +387,25 @@ def read_namelist(namelist_file):
 		field = str[0]
 		out_dict[label][field] = [] 
 
+
 		for k in range(2,str.__len__()):
 		    dat = str[k].rstrip(',')
+		    # dat = str[k].split(',')
+		    print str, dat
 		    try:
 			dat=float(dat)
 		    except ValueError:
 			pass
+		    except TypeError:
+			pass
 
-		    out_dict[label][field].append(dat) 
+		    out_dict[label][field].extend(dat) 
 	    
 	    # out_dict[label][field] = [] 
 	    # out_dict[label][field].append(str[2:])
 
     return out_dict
+
 
 def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     """
