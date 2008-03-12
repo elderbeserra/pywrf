@@ -4,7 +4,7 @@ import matplotlib.numerix.ma as ma
 import numpy as n
 from string import zfill
 from matplotlib.toolkits.basemap import Basemap
-import pywrf.viz.utils as vu
+# import pywrf.viz.utils as vu
 
 a_small_number = 1e-8
 
@@ -276,10 +276,29 @@ def find_parent_ij(outer_grid, inner_grid):
 
     return outer_x.searchsorted(inner_x[0]), outer_y.searchsorted(inner_y[0])
 
+def write_namelist(namelist_dict,outfile='outfile'):
+
+    out_string=''
+    for group in namelist_dict.keys():
+	out_string += group + '\n'
+	for variable in namelist_dict[group].keys():
+	    out_string += variable + ' = ' 
+	    for element in namelist_dict[group][variable]:
+		out_string += repr(element)+', '
+	    out_string+='\n'
+	out_string+= '/\n\n'
+
+    fid=open(outfile,'w')
+    fid.write(out_string)
+
+    return None
+
+
+
 def read_namelist(namelist_file):
     """read contents of namelist file and return dictionary containing all options
     
-    Created 20/01/01 by Thom Chubb.
+    Created 20/01/08 by Thom Chubb.
 
     TODO: mod_levs have a slightly different format in the namelist file, but as 
     they come last in namelist.wps I have conveniently dropped them (with a warning
@@ -294,17 +313,22 @@ def read_namelist(namelist_file):
     data = fid.readlines()
     num_lines = len(data)
 
-    for k in range(0,num_lines):
-	str = data[k].rstrip('\n').rstrip(',').split()
+    # for k in range(0,num_lines):
+    for line in data:
+	# str = data[k].rstrip('\n').rstrip(',').split()
+	str = line.rstrip('\n').rstrip(',').split()
 
 	if str == []:
 	    pass
-	elif str[0] == '':
+	elif str[0] == '':  
 	    pass
-	elif str[0][0] == '/' or str[0][0] == '':
+	elif str[0][0] == '':
 	    pass
+	elif str[0][0] == '/' :
+	    is_comment=True
 	elif str[0][0] == '&':
 	    # Then this line is a namelist title
+	    is_comment=False
 	    label = str[0]
 
 	    if label == '&mod_levs':
@@ -314,18 +338,18 @@ def read_namelist(namelist_file):
 	    out_dict[label] ={}
 
 	else: 
-	    
-	    field = str[0]
-	    out_dict[label][field] = [] 
+	    if not is_comment:
+		field = str[0]
+		out_dict[label][field] = [] 
 
-	    for k in range(2,str.__len__()):
-		dat = str[k].rstrip(',')
-		try:
-		    dat=float(dat)
-		except ValueError:
-		    pass
+		for k in range(2,str.__len__()):
+		    dat = str[k].rstrip(',')
+		    try:
+			dat=float(dat)
+		    except ValueError:
+			pass
 
-		out_dict[label][field].append(dat) 
+		    out_dict[label][field].append(dat) 
 	    
 	    # out_dict[label][field] = [] 
 	    # out_dict[label][field].append(str[2:])
