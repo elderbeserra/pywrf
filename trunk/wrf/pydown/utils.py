@@ -118,13 +118,14 @@ def generate_namelist_input_dpp_ndown(pp,namelist_input_master,run_dir='.'):
     # grid id
     namelist_dict['&domains']['grid_id']=[1,2]
     # ndown reads 1 as parent and 2 as child hence
-    namelist_dict['&domains']['parent_id']=[1,2]
+    namelist_dict['&domains']['parent_id']=[0,1]
     # parent grid ratio of 'parent' is 1:
     namelist_dict['&domains']['parent_grid_ratio'][0]=1
     # j_parent_start of parent is 1
     namelist_dict['&domains']['j_parent_start'][0]=0
     # same for i_parent_start
     namelist_dict['&domains']['i_parent_start'][0]=0
+    # currently not changing parent_time_step_ratio, but watch this space
 
     # &time control corrections
     namelist_dict['&time_control']['input_from_file'][0]='.true.'
