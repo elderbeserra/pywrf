@@ -284,7 +284,7 @@ def write_namelist(namelist_dict,outfile='outfile'):
 	for variable in namelist_dict[group].keys():
 	    out_string += variable + ' = ' 
 	    for element in namelist_dict[group][variable]:
-		out_string += repr(element)+', '
+		out_string += repr(element).strip("'")+', '
 	    out_string+='\n'
 	out_string+= '/\n\n'
 
@@ -334,77 +334,85 @@ def read_namelist(namelist_file):
 		    try:
 			values=[float(element) for element in values.split(',')]
 		    except ValueError:
-			values=values.split(',')
+			values=[value.strip() for value in values.split(',')]
 
 		out_dict[current_label][variable.strip()]=values
 
     return out_dict
 
-def read_namelist_old(namelist_file):
-    """read contents of namelist file and return dictionary containing all options
-    
-    Created 20/01/08 by Thom Chubb.
+def check_namelist_consistency():
+    # TODO
+	# run time vs. run date 
+	# strict consistency between dates in namelist.wps and namelist.input not 
+	# necessary as long as dates in namelist.input are a subset of those in namelist.wps
+	# and the interval_seconds is correct
+    pass
 
-    TODO: mod_levs have a slightly different format in the namelist file, but as 
-    they come last in namelist.wps I have conveniently dropped them (with a warning
-    of course =) ). Whoever needs them first can come up with a fix for this.
-    Untested as yet with the namelist.input file. It should work fine and may be useful 
-    as a consistency check between the two files. This has been buggine me for a while.
-    """
-
-    fid=open(namelist_file)
-
-    out_dict={}
-    data = fid.readlines()
-    num_lines = len(data)
-
-    # for k in range(0,num_lines):
-    for line in data:
-	# str = data[k].rstrip('\n').rstrip(',').split()
-	str = line.rstrip('\n').rstrip(',').split()
-
-	if str == []:
-	    pass
-	elif str[0] == '':  
-	    pass
-	elif str[0][0] == '':
-	    pass
-	elif str[0][0] == '/' :
-	    is_comment=True
-	elif str[0][0] == '&':
-	    # Then this line is a namelist title
-	    is_comment=False
-	    label = str[0]
-
-	    if label == '&mod_levs':
-		print ">> WARNING: mod levels don't work yet"
-		break
-
-	    out_dict[label] ={}
-
-	else: 
-	    if not is_comment:
-		field = str[0]
-		out_dict[label][field] = [] 
-
-
-		for k in range(2,str.__len__()):
-		    dat = str[k].rstrip(',')
-		    # dat = str[k].split(',')
-		    print str, dat
-		    try:
-			dat=float(dat)
-		    except ValueError:
-			pass
-		    except TypeError:
-			pass
-
-		    out_dict[label][field].extend(dat) 
-	    
-	    # out_dict[label][field] = [] 
-	    # out_dict[label][field].append(str[2:])
-
-    return out_dict
+#def read_namelist_old(namelist_file):
+#    """read contents of namelist file and return dictionary containing all options
+#    
+#    Created 20/01/08 by Thom Chubb.
+#
+#    TODO: mod_levs have a slightly different format in the namelist file, but as 
+#    they come last in namelist.wps I have conveniently dropped them (with a warning
+#    of course =) ). Whoever needs them first can come up with a fix for this.
+#    Untested as yet with the namelist.input file. It should work fine and may be useful 
+#    as a consistency check between the two files. This has been buggine me for a while.
+#    """
+#
+#    fid=open(namelist_file)
+#
+#    out_dict={}
+#    data = fid.readlines()
+#    num_lines = len(data)
+#
+#    # for k in range(0,num_lines):
+#    for line in data:
+#	# str = data[k].rstrip('\n').rstrip(',').split()
+#	str = line.rstrip('\n').rstrip(',').split()
+#
+#	if str == []:
+#	    pass
+#	elif str[0] == '':  
+#	    pass
+#	elif str[0][0] == '':
+#	    pass
+#	elif str[0][0] == '/' :
+#	    is_comment=True
+#	elif str[0][0] == '&':
+#	    # Then this line is a namelist title
+#	    is_comment=False
+#	    label = str[0]
+#
+#	    if label == '&mod_levs':
+#		print ">> WARNING: mod levels don't work yet"
+#		break
+#
+#	    out_dict[label] ={}
+#
+#	else: 
+#	    if not is_comment:
+#		field = str[0]
+#		out_dict[label][field] = [] 
+#
+#
+#		for k in range(2,str.__len__()):
+#		    dat = str[k].rstrip(',')
+#		    # dat = str[k].split(',')
+#		    print str, dat
+#		    try:
+#			dat=float(dat)
+#		    except ValueError:
+#			pass
+#		    except TypeError:
+#			pass
+#
+#		    out_dict[label][field].extend(dat) 
+#	    
+#	    # out_dict[label][field] = [] 
+#	    # out_dict[label][field].append(str[2:])
+#
+#    return out_dict
 
 
 def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
