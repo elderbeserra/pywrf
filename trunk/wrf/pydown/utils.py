@@ -30,6 +30,8 @@ else:
       + ' import pywrf.wrf.utils as wu'
     import pywrf.wrf.utils as wu
 
+
+
 def generate_namelist_input_d01_real(namelist_input_master,run_dir='.'):
     """Generate a namelist file for real.exe for the outermost domain
     
@@ -38,8 +40,9 @@ def generate_namelist_input_d01_real(namelist_input_master,run_dir='.'):
     """
     namelist_dict=wu.read_namelist(namelist_input_master)
     namelist_dict['&domains']['max_dom'][0]=1
-    wu.write_namelist(namelist_dict,os.path.join(run_dir,'namelist.input.d01.real'))
-    return None
+    output_file = os.path.join(run_dir,'namelist.input.d01.real')
+    wu.write_namelist(namelist_dict,output_file)
+    return output_file
 
 def generate_namelist_input_d01_wrf(namelist_input_master,run_dir='.'):
     """Generate a namelist file for wrf.exe for the outermost domain
@@ -49,8 +52,9 @@ def generate_namelist_input_d01_wrf(namelist_input_master,run_dir='.'):
     """
     namelist_dict=wu.read_namelist(namelist_input_master)
     namelist_dict['&domains']['max_dom'][0]=1
-    wu.write_namelist(namelist_dict,os.path.join(run_dir,'namelist.input.d01.wrf'))
-    return None
+    output_file = os.path.join(run_dir,'namelist.input.d01.wrf')
+    wu.write_namelist(namelist_dict,output_file)
+    return output_file
 
 def generate_namelist_input_dpp_real(pp,namelist_input_master,run_dir='.'):
     """Generate a namelist for real.exe for the pp'th domain
@@ -82,7 +86,7 @@ def generate_namelist_input_dpp_real(pp,namelist_input_master,run_dir='.'):
     namelist_dict['&domains']['max_dom'][0]=1
     # grid id
     namelist_dict['&domains']['grid_id'][0]=1
-    namelist_dict['&domains']['parent_id'][0]=1
+    namelist_dict['&domains']['parent_id'][0]=0
     namelist_dict['&domains']['parent_grid_ratio'][0]=1
     # j_parent_start of parent is 1
     namelist_dict['&domains']['j_parent_start'][0]=0
@@ -102,8 +106,10 @@ def generate_namelist_input_dpp_real(pp,namelist_input_master,run_dir='.'):
     # Shorten the time extent to save on CPU resources (ref. step 15 in dia)
     # Include explicit definition of eta_levels
 
-    wu.write_namelist(namelist_dict,os.path.join(run_dir,'namelist.input.d'+str(pp).zfill(2)+'.real'))
-    return None
+    output_file = os.path.join(run_dir,'namelist.input.d'+str(pp).zfill(2)+'.real')
+    wu.write_namelist(namelist_dict,output_file)
+    return output_file
+    
 
 def generate_namelist_input_dpp_ndown(pp,namelist_input_master,run_dir='.'):
     """Generate a namelist for ndown.exe for the pp'th domain
@@ -163,8 +169,10 @@ def generate_namelist_input_dpp_ndown(pp,namelist_input_master,run_dir='.'):
     namelist_dict['&bdy_control']['specified'][0]='.true.'
 
 
-    wu.write_namelist(namelist_dict,os.path.join(run_dir,'namelist.input.d'+str(pp).zfill(2)+'.ndown'))
-    return None
+    output_file = \
+      os.path.join(run_dir,'namelist.input.d'+str(pp).zfill(2)+'.ndown')
+    wu.write_namelist(namelist_dict,output_file)
+    return output_file
 
 def generate_namelist_input_dpp_wrf(pp,namelist_input_master,run_dir='.'):
     """Generate a namelist for wrf.exe for the pp'th domain
@@ -212,7 +220,7 @@ def generate_namelist_input_dpp_wrf(pp,namelist_input_master,run_dir='.'):
     namelist_dict['&domains']['max_dom'][0]=1
     # grid id
     namelist_dict['&domains']['grid_id'][0]=1
-    namelist_dict['&domains']['parent_id'][0]=1
+    namelist_dict['&domains']['parent_id'][0]=0
     namelist_dict['&domains']['parent_grid_ratio'][0]=1
     # j_parent_start of parent is 1
     namelist_dict['&domains']['j_parent_start'][0]=0
@@ -232,6 +240,7 @@ def generate_namelist_input_dpp_wrf(pp,namelist_input_master,run_dir='.'):
     # Shorten the time extent to save on CPU resources (ref. step 15 in dia)
     # Include explicit definition of eta_levels
 
-    wu.write_namelist(namelist_dict,os.path.join(run_dir,'namelist.input.d'+str(pp).zfill(2)+'.wrf'))
+    output_file = os.path.join(run_dir,'namelist.input.d'+str(pp).zfill(2)+'.wrf')
+    wu.write_namelist(namelist_dict,output_file)
+    return output_file
 
-    return None
