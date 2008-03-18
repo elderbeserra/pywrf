@@ -1,10 +1,41 @@
 import os
+from socket import gethostname
+import sys
 import pylab as p
 import matplotlib.numerix.ma as ma
 import numpy as n
 from string import zfill
 from matplotlib.toolkits.basemap import Basemap
-# import pywrf.viz.utils as vu
+
+# VB the following is both host and user specific hence
+hostname = gethostname()
+user = os.getlogin()
+if hostname == 'hn3.its.monash.edu.au':
+    if user == 'vbisign':
+        sys.path.append('/home/vbisign/wrf/pywrf')   
+        import viz.utils as vu
+    elif user == 'tchubb':
+        print 'Hey Thom where do you keep pywrf on this computer?'
+        sys.exit()
+        sys.path.append('/somewhere/pylib')
+        import pywrf.viz.utils as vu
+elif hostname == 'linux450':
+    # VB Sorry Thom if this is not correct ;)
+    print 'Hey Thom where do you keep pywrf on this computer?'
+    sys.exit()
+    sys.path.append('/somewhere/pylib')
+    import pywrf.viz.utils as vu
+elif hostname == 'val.maths.monash.edu.au':
+    sys.path.append('/Users/val/Desktop/workspace/pywrf')
+    import viz.utils as vu
+else:
+    print 'Warning: since I do not know this user/'\
+      + 'hostname combination, I am not sure of ' \
+      + ' where to find pywrf.viz.util, I will try\n' \
+      + ' import pywrf.viz.utils as vu'
+    import pywrf.viz.utils as vu
+
+ 
 
 a_small_number = 1e-8
 

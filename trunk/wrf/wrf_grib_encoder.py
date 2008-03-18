@@ -19,7 +19,6 @@ Usage:
 #############################################################################
 
 # This script depends from a lot of external libraries:
-import PyNGL_numpy.Nio as nio
 import os, sys
 import numpy as n
 import pylab as p
@@ -27,12 +26,51 @@ import grib2
 from string import zfill
 from matplotlib.numerix import ma
 
-sys.path.append('/Users/val/data/pylib')
-#sys.path.append('/mnt/mac/Users/val/data/pylib')
-from met_utils import *
-import viz.utils as vu
+# VB the following is both host and user specific hence
+# VB TODO Is giving away in the source login and host names a potential
+# security issue?
+from socket import gethostname
+hostname = gethostname()
+user = os.getlogin()
+if hostname == 'hn3.its.monash.edu.au':
+    import PyNGL.Nio as nio
+    if user == 'vbisign':
+        sys.path.append('/home/vbisign/wrf/pywrf')   
+        import viz.utils as vu
+        from misc.met_utils import *
+    elif user == 'tchubb':
+        print 'Hey Thom where do you keep pywrf on this computer?'
+        sys.exit()
+        sys.path.append('/somewhere/pylib')
+        import pywrf.viz.utils as vu
+        from pywrf.misc.met_utils import *
+elif hostname == 'linux450':
+    # VB Sorry Thom if this is not correct ;)
+    print 'Hey Thom where do you keep pywrf on this computer?'
+    print 'Hey Thom how do you import pynio on this computer?'
+    sys.exit()
+    import PyNGL_numpy.Nio as nio
+    sys.path.append('/somewhere/pylib')
+    import pywrf.viz.utils as vu
+    from pywrf.misc.met_utils import *
+elif hostname == 'val.maths.monash.edu.au':
+    import PyNGL_numpy.Nio as nio
+    sys.path.append('/Users/val/Desktop/workspace/pywrf')
+    import viz.utils as vu
+    from misc.met_utils import *
+else:
+    print 'Warning: since I do not know this user/'\
+      + 'hostname combination, I am not sure of ' \
+      + ' where to find pywrf.viz.util, I will try\n' \
+      + ' import pywrf.viz.utils as vu\n' \
+      + ' from pywrf.misc.met_utils import *\n' \
+      + ' import PyNGL.Nio as nio\n'
+    import pywrf.viz.utils as vu
+    from pywrf.misc.met_utils import *
+    import PyNGL.Nio as nio
 
-
+# VB TODO probably the data directories should be included in the above
+# statement
 #data_directory = '/Users/val/data/laps_nc_files/press/first_try/'
 #sfc_data_directory = '/Users/val/data/laps_surface_data/'
 #data_directory = '/mnt/mac/Users/val/data/laps_nc_files/press/first_try/'
