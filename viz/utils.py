@@ -2,7 +2,24 @@
 repo of useful functions for visualizing stuff
 """
 
-import PyNGL_numpy.Nio as nio
+import os
+from socket import gethostname
+
+# VB The following import is host specific
+hostname = gethostname()
+if hostname == 'hn3.its.monash.edu.au':
+    import PyNGL.Nio as nio
+elif hostname == 'linux450':
+    # VB Sorry Thom if this is not correct ;)
+    import PyNGL.Nio as nio
+elif hostname == 'val.maths.monash.edu.au':
+    import PyNGL_numpy.Nio as nio
+else:
+    print 'Warning: since I do not know this hostname, I am not sure of ' \
+      + ' the appropriate syntax to import pynio... I will try\n' \
+      + ' import PyNGL.Nio as nio'
+    import PyNGL.Nio as nio
+
 import pylab as p
 import matplotlib.numerix.ma as ma
 import numpy as n
