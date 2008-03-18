@@ -1,8 +1,34 @@
 import sys
-sys.path.append('/home/tchubb/pylib/pywrf')
 import os
+from socket import gethostname
 
-import wrf.utils as wu
+# VB the following is both host and user specific hence
+hostname = gethostname()
+user = os.getlogin()
+if hostname == 'hn3.its.monash.edu.au':
+    if user == 'vbisign':
+        sys.path.append('/nfs/1/home/vbisign/wrf/pywrf')   
+        import wrf.utils as wu
+    elif user == 'tchubb':
+        print 'Hey Thom where do you keep pywrf on this computer?'
+        sys.exit()
+        sys.path.append('/somewhere/pylib')
+        import pywrf.wrf.utils as wu
+elif hostname == 'linux450':
+    # VB Sorry Thom if this is not correct ;)
+    print 'Hey Thom where do you keep pywrf on this computer?'
+    sys.exit()
+    sys.path.append('/somewhere/pylib')
+    import pywrf.wrf.utils as wu
+elif hostname == 'val.maths.monash.edu.au':
+    sys.path.append('/Users/val/Desktop/workspace/pywrf')
+    import wrf.utils as wu
+else:
+    print 'Warning: since I do not know this user/'\
+      + 'hostname combination, I am not sure of ' \
+      + ' where to find pywrf.wrf.util, I will try\n' \
+      + ' import pywrf.wrf.utils as wu'
+    import pywrf.wrf.utils as wu
 
 def generate_namelist_input_d01_real(namelist_input_master,run_dir='.'):
     """Generate a namelist file for real.exe for the outermost domain
