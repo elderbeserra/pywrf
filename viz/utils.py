@@ -151,8 +151,8 @@ def set_title_string(
     title_string = \
       prefix + ' '\
       + lvl_string + ' ' \
-      + long_name + ' (' + units + ')' \
-      + ' valid at\n' \
+      + long_name + ' (' + units + ')\n' \
+      + ' valid at' \
       + time_string \
       + postfix
     return title_string
@@ -341,13 +341,23 @@ def flip_yaxis(slab):
     return flipped_slab
 
  
-def set_cntr_lvl(data, intervals=12, only_positive=False, significant_digits=0):
+def set_cntr_lvl(data, 
+      intervals=12, 
+      only_positive=False, 
+      significant_digits=0,
+      forced_max=None,
+      forced_min=None):
+
     import math as m
     dummy = data * 10**significant_digits
     min = dummy.min()
     max = dummy.max()
     floor = m.floor(min)
     ceil = m.ceil(max)
+    if forced_max:
+        ceil = forced_max * 10**significant_digits
+    if forced_min:
+        floor = forced_min * 10**significant_digits
     if only_positive:
         floor = 0
     extent = float(ceil - floor)
@@ -371,6 +381,141 @@ def lin_interp(xa, xb, ya, yb, x):
     y = ya + slope * (x - xa)
     return y
     
+def plot_slice(
+  ordinate,
+  data,
+  abscissa = None,
+  abscissa_label = None,
+  land_mask = None,
+  cntr_lvl = None,
+  wind_vector = None,
+  log_scale = False,
+  pressure = True,
+  ordinate_quiv_skip = 1,
+  abscissa_quiv_skip = 3,
+  xmin = None,
+  xmax = None,
+  ymin = None,
+  ymax = None,
+  significant_digits = 0,
+  title_string = 'N/A',
+  file_name = None,
+  dpi = 100
+  ):
+    '''
+    plot a slice
+    Usage:
+    >>> plot_vertical_slice(ordinate, data, abscissa, wind_vector)
+    where
+      ordinate is either pressure or height. By default pressure is assumed
+      data is a vertical slice
+      abscissa is either 1D or 2D
+    '''
+    if log_scale:
+        ordinate = n.log10(ordinate)
+    # if the abscissa is not supplied than simply use the record numbers
+    if abscissa == None:
+        x = n.arange(1,data.shape[1]+1)
+        abscissa = n.zeros(data.shape)
+        for y_idx in range(data.shape[0]):
+            abscissa[y_idx] = x
+        if cntr_lvl != None:
+            cset = p.contourf(abscissa, ordinate, data, cntr_lvl)
+        else:
+            cset = p.contourf(abscissa, ordinate, data)
+        p.xlabel('record number')
+    else:
+        # let's handle 1D abscissa arrays
+        if len(abscissa.shape) == 1:
+            dummy = n.zeros(data.shape)
+            for lvl_idx in range(data.shape[0]):
+                dummy[lvl_idx] = abscissa
+            abscissa = dummy
+            del dummy
+        if cntr_lvl != None:
+            cset = p.contourf(abscissa, ordinate, data, cntr_lvl)
+        else:
+            cset = p.contourf(abscissa, ordinate, data)
+        if abscissa_label:
+            p.xlabel(abscissa_label)
+        else:
+            p.xlabel('N/A')
+    if wind_vector:
+        p.quiver(abscissa[::ordinate_quiv_skip,::abscissa_quiv_skip], 
+          ordinate[::ordinate_quiv_skip,::abscissa_quiv_skip], 
+          wind_vector[0][::ordinate_quiv_skip,::abscissa_quiv_skip], 
+          wind_vector[1][::ordinate_quiv_skip,::abscissa_quiv_skip])
+    if land_mask != None:
+        land = ma.masked_where(land_mask == 2,ordinate[0])
+        p.plot(abscissa[0], land, color=(0.59,0.29,0.0), linewidth=2.)
+        # if you also want to plot the ocean uncomment the following lines
+        #if log_scale:
+        #    ocean = ma.masked_where(land_mask == 1, n.log10(1013.25))
+        #else:
+        #    ocean = ma.masked_where(land_mask == 1, 1013.25)
+        #p.plot(abscissa[0], ocean, color=(0.0,0.0,1.0), linewidth=2.)
+    if pressure:
+        # I am assuming pressure will be expressed in hPa
+        yticks_location = n.arange(1000.,99.,-100.)
+        if log_scale:
+            p.yticks(n.log10(yticks_location), 
+              [str(int(e)) for e in yticks_location])
+            p.ylabel('log10 of pressure')
+            for e in n.log10(yticks_location):
+                p.axhline(e,linestyle='--',color=(0.7,0.7,0.7))
+            # the -5. is there to create a bit of a top margin
+            if ordinate.max() > n.log10(1013.25):
+                cheat_ymin = ordinate.max()
+            else:
+                cheat_ymin = n.log10(1013.25 + 5.)
+            p.ylim(ymin=cheat_ymin,
+              ymax=n.log10(10**ordinate.min() - 5.))
+        else:
+            p.yticks( yticks_location, 
+              [str(int(e)) for e in yticks_location])
+            p.ylabel('pressure (hPa)')
+            for e in yticks_location:
+                p.axhline(e,linestyle='--',color=(0.7,0.7,0.7))
+            # the -25. is there to create a bit of a top margin
+            if ordinate.max() > 1013.25:
+                cheat_ymin = ordinate.max()
+            else:
+                cheat_ymin = 1013.25 + 10.
+            p.ylim(ymin=cheat_ymin, ymax=ordinate.min() - 25.)
+            # p.ylim(ymin=ordinate.max(), ymax=ordinate.min() - 25.)
+            # if any of the axes boundaries have been given explicitly, we'll 
+            # them
+            if log_scale:
+                if xmin != None:
+                    p.xlim(xmin=n.log10(xmin))
+                if xmax != None:
+                    p.xlim(xmax=n.log10(xmax))
+                if ymin != None:
+                    p.ylim(ymin=n.log10(ymin))
+                if ymax != None:
+                    p.ylim(ymax=n.log10(ymax))
+            else:
+                if xmin != None:
+                    p.xlim(xmin=xmin)
+                if xmax != None:
+                    p.xlim(xmax=xmax)
+                if ymin != None:
+                    p.ylim(ymin=ymin)
+                if ymax != None:
+                    p.ylim(ymax=ymax)
+
+    else:
+        print 'I assume you are trying to plot in z coordinate: ' \
+          + 'sorry not implemented yet'
+    format = '%.'+ str(significant_digits) + 'f'
+    p.colorbar(cset, orientation='horizontal', shrink=0.7, 
+      #fraction=0.02, pad=0.095, aspect=70, 
+      fraction=0.02, pad=0.1, aspect=70, 
+      format = format)
+    p.title(title_string)
+    if file_name:
+        p.savefig(file_name,dpi=dpi)
+        p.close()
 
 
 
