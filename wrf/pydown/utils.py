@@ -20,7 +20,8 @@ elif hostname == 'linux450':
     sys.exit()
     sys.path.append('/somewhere/pylib')
     import pywrf.wrf.utils as wu
-elif hostname == 'val.maths.monash.edu.au':
+elif hostname == 'val.maths.monash.edu.au' \
+  or hostname == 'valerio-bisignanesis-computer.local':
     sys.path.append('/Users/val/Desktop/workspace/pywrf')
     import wrf.utils as wu
 else:

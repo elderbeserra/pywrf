@@ -12,7 +12,7 @@ hostname = gethostname()
 user = os.getlogin()
 if hostname == 'hn3.its.monash.edu.au':
     if user == 'vbisign':
-        sys.path.append('/home/vbisign/wrf/pywrf')   
+        sys.path.append('/nfs/1/home/vbisign/wrf/pywrf')   
         import viz.utils as vu
     elif user == 'tchubb':
         print 'Hey Thom where do you keep pywrf on this computer?'
@@ -25,7 +25,8 @@ elif hostname == 'linux450':
     sys.exit()
     sys.path.append('/somewhere/pylib')
     import pywrf.viz.utils as vu
-elif hostname == 'val.maths.monash.edu.au':
+elif hostname == 'val.maths.monash.edu.au' \
+    or hostname == 'valerio-bisignanesis-computer.local':
     sys.path.append('/Users/val/Desktop/workspace/pywrf')
     import viz.utils as vu
 else:
@@ -56,6 +57,29 @@ def colons_to_underscores(test=False):
     return
 
 def wrf_to_pressure(var, pressure, press_lvl, fill_value=1e35, positive_only=False):
+    """
+    this functions vertically interpolates to pressure levels WRF fields
+    usage 
+    >>> interpolated_var(var, pressure, press_lvl, fill_value=1e35, 
+    ...    positive_only=False)
+    where 
+        var -> field to be interpolated
+        pressure -> total pressure field (p + pb)
+        press_lvl -> list or numpy array of desired levels
+        fill_value -> this is assigned to a cell if the requested pressure level
+          lies below or above the column of values supplied for that cell in 
+          the pressure array.
+        positive_only -> set this flag to true to prevent the interpolation to 
+          generate negative values for fields for which this does not make 
+          sense.
+        interpolated_var -> the interpolated field which will have shape 
+          (len(press_lvl), var.shape[1], var.shape[2])
+    NB in this current implementation of the function arrays need to be 
+      destaggerred before they operated upon. Furthermore, it is assumed the
+      function is invoked to process one frame at at time i.e. it works on 3D
+      arrays. As usual COARDS ordering of dimensions i.e. (time,lvl,lat,lon) 
+      is assumed.
+    """
     # these are the pressure levels we want as output
     k_max, j_max, i_max = pressure.shape
     output = n.zeros((len(press_lvl), j_max, i_max))
@@ -75,7 +99,7 @@ def wrf_to_pressure(var, pressure, press_lvl, fill_value=1e35, positive_only=Fal
                     ya = var_column[press_idx]
                     yb = var_column[press_idx - 1]
                     x = press_lvl[lvl_idx]
-                    y = lin_interp(xa, xb, ya, yb, x)
+                    y = vu.lin_interp(xa, xb, ya, yb, x)
                     if positive_only and y < 0.:
                         y = 0.
                     output[lvl_idx,j,i] = y

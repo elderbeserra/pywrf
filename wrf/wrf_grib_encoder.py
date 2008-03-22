@@ -35,15 +35,17 @@ user = os.getlogin()
 if hostname == 'hn3.its.monash.edu.au':
     import PyNGL.Nio as nio
     if user == 'vbisign':
-        sys.path.append('/home/vbisign/wrf/pywrf')   
+        sys.path.append('/nfs/1/home/vbisign/wrf/pywrf')   
         import viz.utils as vu
         from misc.met_utils import *
+        cnvgrib_cmd = 'cnvgrib'
     elif user == 'tchubb':
         print 'Hey Thom where do you keep pywrf on this computer?'
         sys.exit()
         sys.path.append('/somewhere/pylib')
         import pywrf.viz.utils as vu
         from pywrf.misc.met_utils import *
+        cnvgrib_cmd = '???'
 elif hostname == 'linux450':
     # VB Sorry Thom if this is not correct ;)
     print 'Hey Thom where do you keep pywrf on this computer?'
@@ -53,21 +55,26 @@ elif hostname == 'linux450':
     sys.path.append('/somewhere/pylib')
     import pywrf.viz.utils as vu
     from pywrf.misc.met_utils import *
-elif hostname == 'val.maths.monash.edu.au':
+    cnvgrib_cmd = '???'
+elif hostname == 'val.maths.monash.edu.au' \
+    or hostname == 'valerio-bisignanesis-computer.local':
     import PyNGL_numpy.Nio as nio
     sys.path.append('/Users/val/Desktop/workspace/pywrf')
     import viz.utils as vu
     from misc.met_utils import *
+    cnvgrib_cmd = '/Users/val/src/cnvgrib-1.1.3/cnvgrib'
 else:
     print 'Warning: since I do not know this user/'\
       + 'hostname combination, I am not sure of ' \
       + ' where to find pywrf.viz.util, I will try\n' \
       + ' import pywrf.viz.utils as vu\n' \
       + ' from pywrf.misc.met_utils import *\n' \
-      + ' import PyNGL.Nio as nio\n'
+      + ' import PyNGL.Nio as nio\n' \
+      + " cnvgrib_cmd = '???'\n"
     import pywrf.viz.utils as vu
     from pywrf.misc.met_utils import *
     import PyNGL.Nio as nio
+    cnvgrib_cmd = '???'
 
 # VB TODO probably the data directories should be included in the above
 # statement
@@ -83,8 +90,16 @@ else:
 #sfc_data_directory = '/Volumes/COMMON/wrf/canberra/sfc/'
 #data_directory = '/Volumes/DATA/wrf/canberra/press/'
 #sfc_data_directory = '/Volumes/DATA/wrf/canberra/sfc/'
-data_directory = '/Users/val/Desktop/workspace/plotting/canberra/press/'
-sfc_data_directory = '/Users/val/Desktop/workspace/plotting/canberra/sfc/'
+#data_directory = '/Users/val/Desktop/workspace/plotting/canberra/press/'
+#sfc_data_directory = '/Users/val/Desktop/workspace/plotting/canberra/sfc/'
+#data_directory = \
+#  '/nfs/1/home/vbisign/wrf/wps_data/pygrib2_test/canberra/press/analyses/'
+#sfc_data_directory = \
+#  '/nfs/1/home/vbisign/wrf/wps_data/pygrib2_test/canberra/sfc/'
+data_directory = \
+  '/nfs/1/home/vbisign/wrf/wps_data/run_003/press/'
+sfc_data_directory = \
+#sfc_data_directory = '/Users/val/Desktop/workspace/plotting/canberra/sfc/'
 # It is assumed that most people will use a single nc file as the source
 # of their fields. Neverthless, the field nc_file_name is available for those
 # that need to use multiple data sources.
@@ -139,14 +154,26 @@ def prepare_sfc_data(f, fv):
     # this was needed for the first batch of data...
     valid_date = fv['valid_date'].get_value()[0]
     valid_time = fv['valid_time'].get_value()[0]
+    # the following is old stuff
     if 0:
         # the data in each file 'starts' at 12:00pm (UTC)
         if valid_time < 1200:
             valid_date -= 1
-        sfc_file = 'laps' + str(valid_date)[4:] + '_surface.nc'
+        #sfc_file = 'laps' + str(valid_date)[4:] + '_surface.nc'
         print sfc_data_directory + sfc_file
-    # now we use a full 48 hrs forecast hence
-    sfc_file = 'laps0117_surface.nc'
+    # this is new and (hopefully) better
+    if 1:
+        # there is one sfc data file for each of the analysis containing the
+        # full 73 hours of diagnostic fields
+        # in the simplified case that we do not span analysis -> we start again
+        # with a different file at every analysis:
+        base_date = fv['base_date'].get_value()
+        base_time = fv['base_time'].get_value()
+        sfc_file = 'regprog.laps_pt375.' \
+          + str(base_date)[4:] + '.' + str(base_time).zfill(4)[:2] \
+          + '.slvfld.n3.nc'
+    # if we use data from a single forecast we just name the appropriate file
+    # sfc_file = 'laps0117_surface.nc'
     sfc_f = nio.open_file(sfc_data_directory + sfc_file)
     sfc_fv = sfc_f.variables
     # I need this to work out which time to pick in the file...
@@ -541,7 +568,8 @@ for file in files:
 
     cheat = fv['mslp'].get_value()[0,lat_cheat_idx:,:-lon_cheat_idx]
     # to go from mb to Pa
-    cheat *= 100.
+    #cheat *= 100.
+    cheat = cheat * 100.
     field = n.zeros(cheat.shape)
     for lat_idx in range(cheat.shape[0]):
         field[-(lat_idx+1)] = cheat[lat_idx]
@@ -1863,12 +1891,18 @@ for file in files:
         # in the ECMWF soil scheme the data is saved scaled by the depth of the
         # soil layer (or so I understand...)
     
+        # TODO work out this 'not writable' rubbish
+        #print laps_soil_mois.flags['WRITEABLE'] 
+        #laps_soil_mois.flags['WRITEABLE'] = True
         #laps_soil_mois = fv['soil_mois'].get_value()[0]
-        laps_soil_mois = fv['soil_mois'].get_value()[0,:,lat_cheat_idx:,:-lon_cheat_idx]
-        shape = laps_soil_mois.shape
+        #laps_soil_mois = fv['soil_mois'].get_value()[0,:,lat_cheat_idx:,:-lon_cheat_idx]
+        tmp = fv['soil_mois'].get_value()[0,:,lat_cheat_idx:,:-lon_cheat_idx]
+        shape = tmp.shape
+        laps_soil_mois = n.zeros(shape)
         laps_soil_lvl = fv['soil_lvl'].get_value()
         for soil_idx in range(len(laps_soil_lvl)):
-            laps_soil_mois[soil_idx] /= laps_soil_lvl[soil_idx]
+            #laps_soil_mois[soil_idx] /= laps_soil_lvl[soil_idx]
+            laps_soil_mois[soil_idx] = tmp[soil_idx] / laps_soil_lvl[soil_idx]
    
         # Let's interpolate linearly to the Noah levels
 	# NB for the deepest level we actually have an extrapolation
@@ -2043,7 +2077,8 @@ def do_the_encoding(data):
          f.close()
 
          #os.system('cnvgrib -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
-         os.system('/Users/val/src/cnvgrib-1.1.3/cnvgrib -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
+         #os.system('/Users/val/src/cnvgrib-1.1.3/cnvgrib -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
+         os.system(cnvgrib_cmd + ' -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
          os.system('rm ' + file_name)
  
          dummy_idx += 1
