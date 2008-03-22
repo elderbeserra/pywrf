@@ -12,7 +12,8 @@ if hostname == 'hn3.its.monash.edu.au':
 elif hostname == 'linux450':
     # VB Sorry Thom if this is not correct ;)
     import PyNGL.Nio as nio
-elif hostname == 'val.maths.monash.edu.au':
+elif hostname == 'val.maths.monash.edu.au' \
+    or hostname == 'valerio-bisignanesis-computer.local':
     import PyNGL_numpy.Nio as nio
 else:
     print 'Warning: since I do not know this hostname, I am not sure of ' \
