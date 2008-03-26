@@ -14,7 +14,7 @@ def plot_soilw_from_gfs(file_name, cntr_lvl=None):
     soilw_m = ma.masked_where(soilw == soilw_var._FillValue, soilw)
     for lvl_idx in range(len(soilw)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
            p.contourf(lon,lat,soilw_m[lvl_idx],cntr_lvl)
         else:
            p.contourf(lon,lat,soilw_m[lvl_idx])
@@ -43,7 +43,7 @@ def plot_soilt_from_gfs(file_name, cntr_lvl=None):
     soilt_m = ma.masked_where(soilt == soilt_var._FillValue, soilt)
     for lvl_idx in range(len(soilt)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
            p.contourf(lon,lat,soilt_m[lvl_idx],cntr_lvl)
         else:
            p.contourf(lon,lat,soilt_m[lvl_idx])
