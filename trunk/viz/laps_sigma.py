@@ -43,7 +43,7 @@ def plot_temp(file_name, cntr_lvl=None, save_frames=False):
     for lvl_idx in range(5):
     #for lvl_idx in range(len(lvl)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             m.contourf(LON,LAT,air_temp[lvl_idx], cntr_lvl)
         else:
             m.contourf(LON,LAT,air_temp[lvl_idx])

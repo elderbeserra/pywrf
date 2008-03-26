@@ -288,13 +288,13 @@ def plot_slab(lon, lat, slab,
     # let's make sure the lat and lon arrays are 2D
     if len(lon.shape) < 2:
         lon, lat = p.meshgrid(lon,lat)
-    if map == None:
+    if map is None:
         map = set_default_basemap(lon,lat,frame_width)
     if not figsize:
         fig = p.figure()
     else:
         fig = p.figure(figsize=figsize)
-    if cntr_lvl != None:
+    if cntr_lvl is not None:
         csetf = map.contourf(lon, lat, slab, 
           cntr_lvl, 
           cmap=cmap)
@@ -302,7 +302,7 @@ def plot_slab(lon, lat, slab,
     else:
         csetf = map.contourf(lon, lat, slab, cmap=cmap)
         cset = map.contour(lon, lat, slab, colors='lightslategray')
-    if wind_vector != None:
+    if wind_vector is not None:
         quiv = map.quiver(lon[::quiv_skip,::quiv_skip], 
           lat[::quiv_skip,::quiv_skip],
           wind_vector[0][::quiv_skip,::quiv_skip],
@@ -345,7 +345,7 @@ def plot_slab(lon, lat, slab,
         p.close(fig)
         del fig
     del cset, csetf
-    if wind_vector != None:
+    if wind_vector is not None:
         del quiv
     gc.collect()
     if return_map:
@@ -439,12 +439,12 @@ def plot_slice(
     if log_scale:
         ordinate = n.log10(ordinate)
     # if the abscissa is not supplied than simply use the record numbers
-    if abscissa == None:
+    if abscissa is None:
         x = n.arange(1,data.shape[1]+1)
         abscissa = n.zeros(data.shape)
         for y_idx in range(data.shape[0]):
             abscissa[y_idx] = x
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             cset = p.contourf(abscissa, ordinate, data, cntr_lvl)
         else:
             cset = p.contourf(abscissa, ordinate, data)
@@ -457,7 +457,7 @@ def plot_slice(
                 dummy[lvl_idx] = abscissa
             abscissa = dummy
             del dummy
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             cset = p.contourf(abscissa, ordinate, data, cntr_lvl)
         else:
             cset = p.contourf(abscissa, ordinate, data)
@@ -470,7 +470,7 @@ def plot_slice(
           ordinate[::ordinate_quiv_skip,::abscissa_quiv_skip], 
           wind_vector[0][::ordinate_quiv_skip,::abscissa_quiv_skip], 
           wind_vector[1][::ordinate_quiv_skip,::abscissa_quiv_skip])
-    if land_mask != None:
+    if land_mask is not None:
         land = ma.masked_where(land_mask == 2,ordinate[0])
         p.plot(abscissa[0], land, color=(0.59,0.29,0.0), linewidth=2.)
         # if you also want to plot the ocean uncomment the following lines
@@ -511,22 +511,22 @@ def plot_slice(
             # if any of the axes boundaries have been given explicitly, we'll 
             # them
             if log_scale:
-                if xmin != None:
+                if xmin is not None:
                     p.xlim(xmin=n.log10(xmin))
-                if xmax != None:
+                if xmax is not None:
                     p.xlim(xmax=n.log10(xmax))
-                if ymin != None:
+                if ymin is not None:
                     p.ylim(ymin=n.log10(ymin))
-                if ymax != None:
+                if ymax is not None:
                     p.ylim(ymax=n.log10(ymax))
             else:
-                if xmin != None:
+                if xmin is not None:
                     p.xlim(xmin=xmin)
-                if xmax != None:
+                if xmax is not None:
                     p.xlim(xmax=xmax)
-                if ymin != None:
+                if ymin is not None:
                     p.ylim(ymin=ymin)
-                if ymax != None:
+                if ymax is not None:
                     p.ylim(ymax=ymax)
 
     else:

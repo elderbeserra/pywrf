@@ -32,7 +32,7 @@ def plot_soilw(file_name, cntr_lvl=None):
     #for lvl_idx in range(1):
     for lvl_idx in range(len(soilw)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             # let's not forget the scaling by the layer depth
             m.contourf(LON,LAT,soilw_m[lvl_idx]/lvl_bounds[lvl_idx], cntr_lvl)
         else:
@@ -81,7 +81,7 @@ def plot_soilt(file_name, cntr_lvl=None):
     #for lvl_idx in range(1):
     for lvl_idx in range(len(soilt)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             m.contourf(LON,LAT,soilt_m[lvl_idx], cntr_lvl)
         else:
             m.contourf(LON,LAT,soilt_m[lvl_idx])
@@ -126,7 +126,7 @@ def plot_temp(file_name, cntr_lvl=None, save_frames=False):
     #for lvl_idx in range(1):
     for lvl_idx in range(len(lvl)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             #p.contourf(lon,lat,air_temp_m[lvl_idx], cntr_lvl)
             #p.contourf(lon,lat,air_temp[lvl_idx], cntr_lvl)
             m.contourf(LON,LAT,air_temp[lvl_idx], cntr_lvl)
@@ -173,7 +173,7 @@ def plot_mr(file_name, cntr_lvl=None, save_frames=False):
     #for lvl_idx in range(2):
     for lvl_idx in range(len(lvl)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             m.contourf(LON,LAT,mr[lvl_idx], cntr_lvl)
         else:
             m.contourf(LON,LAT,mr[lvl_idx])
@@ -214,7 +214,7 @@ def plot_ght(file_name, cntr_lvl=None, save_frames=False):
     #for lvl_idx in range(2):
     for lvl_idx in range(len(lvl)):
         p.figure()
-        if cntr_lvl != None:
+        if cntr_lvl is not None:
             m.contourf(LON,LAT,ght[lvl_idx], cntr_lvl)
         else:
             m.contourf(LON,LAT,ght[lvl_idx])
@@ -249,7 +249,7 @@ def plot_sfc_temp(file_name, cntr_lvl=None, save_frames=False):
     # must plot using 2d lon and lat
     LON, LAT = p.meshgrid(lon,lat)
     p.figure()
-    if cntr_lvl != None:
+    if cntr_lvl is not None:
         m.contourf(LON,LAT,sfc_temp, cntr_lvl)
     else:
         m.contourf(LON,LAT,sfc_temp)
@@ -282,7 +282,7 @@ def plot_sfc_pres(file_name, cntr_lvl=None, save_frames=False):
     # must plot using 2d lon and lat
     LON, LAT = p.meshgrid(lon,lat)
     p.figure()
-    if cntr_lvl != None:
+    if cntr_lvl is not None:
         m.contourf(LON,LAT,sfc_pres, cntr_lvl)
     else:
         m.contourf(LON,LAT,sfc_pres)
@@ -319,7 +319,7 @@ def plot_skin_temp(file_name, cntr_lvl=None, save_frames=False):
     # must plot using 2d lon and lat
     LON, LAT = p.meshgrid(lon,lat)
     p.figure()
-    if cntr_lvl != None:
+    if cntr_lvl is not None:
         m.contourf(LON,LAT,skin_temp, cntr_lvl)
     else:
         m.contourf(LON,LAT,skin_temp)
