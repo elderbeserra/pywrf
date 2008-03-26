@@ -12,20 +12,24 @@ if hostname == 'hn3.its.monash.edu.au':
 elif hostname == 'linux450':
     # VB Sorry Thom if this is not correct ;)
     import PyNGL.Nio as nio
-elif hostname == 'val.maths.monash.edu.au' \
-    or hostname == 'valerio-bisignanesis-computer.local':
-    import PyNGL_numpy.Nio as nio
+elif hostname == 'val.maths.monash.edu.au':
+    import Nio as nio
+    #import PyNGL_numpy.Nio as nio
+elif hostname == 'valerio-bisignanesis-computer.local':
+    import Nio as nio
 else:
     print 'Warning: since I do not know this hostname, I am not sure of ' \
       + ' the appropriate syntax to import pynio... I will try\n' \
       + ' import PyNGL.Nio as nio'
     import PyNGL.Nio as nio
 
+import time
 import pylab as p
 import matplotlib.numerix.ma as ma
 import numpy as n
 from string import zfill
 from matplotlib.toolkits.basemap import Basemap
+import gc
 
 a_small_number = 1e-8
 
@@ -153,7 +157,7 @@ def set_title_string(
       prefix + ' '\
       + lvl_string + ' ' \
       + long_name + ' (' + units + ')\n' \
-      + ' valid at' \
+      + ' valid at ' \
       + time_string \
       + postfix
     return title_string
@@ -276,23 +280,30 @@ def plot_slab(lon, lat, slab,
   quiv_skip = 5,
   frame_width = 5,
   significant_digits = 0,
+  colorbar = False,
+  contour_labels = True,
   return_map = False
   ):
+    from matplotlib.cm import gist_ncar as cmap
     # let's make sure the lat and lon arrays are 2D
     if len(lon.shape) < 2:
         lon, lat = p.meshgrid(lon,lat)
     if map == None:
         map = set_default_basemap(lon,lat,frame_width)
     if not figsize:
-        p.figure()
+        fig = p.figure()
     else:
-        p.figure(figsize=figsize)
+        fig = p.figure(figsize=figsize)
     if cntr_lvl != None:
-        map.contourf(lon, lat, slab, cntr_lvl)
+        csetf = map.contourf(lon, lat, slab, 
+          cntr_lvl, 
+          cmap=cmap)
+        cset = map.contour(lon, lat, slab, cntr_lvl, colors='lightslategray')
     else:
-        map.contourf(lon, lat, slab)
+        csetf = map.contourf(lon, lat, slab, cmap=cmap)
+        cset = map.contour(lon, lat, slab, colors='lightslategray')
     if wind_vector != None:
-        map.quiver(lon[::quiv_skip,::quiv_skip], 
+        quiv = map.quiver(lon[::quiv_skip,::quiv_skip], 
           lat[::quiv_skip,::quiv_skip],
           wind_vector[0][::quiv_skip,::quiv_skip],
           wind_vector[1][::quiv_skip,::quiv_skip])
@@ -318,17 +329,30 @@ def plot_slab(lon, lat, slab,
     if 1:
         map.plot([149.133],[-35.283],'bo', ms=3)
 
-    format = '%.'+ str(significant_digits) + 'f'
-    p.colorbar(orientation='horizontal', shrink=0.7, 
-      fraction=0.02, pad=0.07, aspect=70, 
-      format = format)
+    if contour_labels:
+        p.clabel(cset, cset.levels[::2], 
+          colors='k', fontsize=8, fmt='%i')
+
+    if colorbar:
+        format = '%.'+ str(significant_digits) + 'f'
+        p.colorbar(orientation='horizontal', shrink=0.7, 
+          fraction=0.02, pad=0.07, aspect=70, 
+          format = format)
+
     p.title(title_string)
     if file_name:
         p.savefig(file_name,dpi=dpi)
-        p.close()
+        p.close(fig)
+        del fig
+    del cset, csetf
+    if wind_vector != None:
+        del quiv
+    gc.collect()
     if return_map:
         return map
     else:
+        del map
+        gc.collect()
         return
 
 def flip_yaxis(slab):
@@ -518,5 +542,15 @@ def plot_slice(
         p.savefig(file_name,dpi=dpi)
         p.close()
 
-
-
+def write_to_log_file(log_file, message):
+    '''
+    This functions opens, writes to it,
+    and closes the log file so that tools like tail -f
+    will work as intended.
+    It also prepends a time stamp to each entry.
+    It is assumed that the output_dir and log_file are defined in the 
+    namespace from which the function is called.
+    '''
+    log_file = open(log_file, 'a')
+    log_file.write(time.ctime(time.time()) + ' -> ' + message + '\n')
+    log_file.close()
