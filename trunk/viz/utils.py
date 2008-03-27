@@ -282,6 +282,7 @@ def plot_slab(lon, lat, slab,
   significant_digits = 0,
   colorbar = False,
   contour_labels = True,
+  monochrome = False,
   return_map = False
   ):
     from matplotlib.cm import gist_ncar as cmap
@@ -295,18 +296,27 @@ def plot_slab(lon, lat, slab,
     else:
         fig = p.figure(figsize=figsize)
     if cntr_lvl is not None:
-        csetf = map.contourf(lon, lat, slab, 
-          cntr_lvl, 
-          cmap=cmap)
+        if not monochrome:
+            csetf = map.contourf(lon, lat, slab, 
+              cntr_lvl, 
+              cmap=cmap)
         cset = map.contour(lon, lat, slab, cntr_lvl, colors='lightslategray')
     else:
-        csetf = map.contourf(lon, lat, slab, cmap=cmap)
+        if not monochrome:
+            csetf = map.contourf(lon, lat, slab, cmap=cmap)
         cset = map.contour(lon, lat, slab, colors='lightslategray')
     if wind_vector is not None:
         quiv = map.quiver(lon[::quiv_skip,::quiv_skip], 
           lat[::quiv_skip,::quiv_skip],
           wind_vector[0][::quiv_skip,::quiv_skip],
           wind_vector[1][::quiv_skip,::quiv_skip])
+    # plot grid outline
+    map.plot(lon[0,:],lat[0,:],color='lightslategray')
+    map.plot(lon[-1,:],lat[-1,:],color='lightslategray')
+    map.plot(lon[:,0],lat[:,0],color='lightslategray')
+    map.plot(lon[:,-1],lat[:,-1],color='lightslategray')
+    if monochrome:
+        map.fillcontinents(color='0.95')
 
     map.drawcoastlines()
 
@@ -335,7 +345,7 @@ def plot_slab(lon, lat, slab,
 
     if colorbar:
         format = '%.'+ str(significant_digits) + 'f'
-        p.colorbar(orientation='horizontal', shrink=0.7, 
+        p.colorbar(csetf, orientation='horizontal', shrink=0.7, 
           fraction=0.02, pad=0.07, aspect=70, 
           format = format)
 
@@ -344,7 +354,9 @@ def plot_slab(lon, lat, slab,
         p.savefig(file_name,dpi=dpi)
         p.close(fig)
         del fig
-    del cset, csetf
+    if not monochrome:
+        del csetf
+    del cset
     if wind_vector is not None:
         del quiv
     gc.collect()
@@ -554,3 +566,19 @@ def write_to_log_file(log_file, message):
     log_file = open(log_file, 'a')
     log_file.write(time.ctime(time.time()) + ' -> ' + message + '\n')
     log_file.close()
+
+def generate_output_file_name(output_dir, prefix, timetuple):
+    """Returns the output file name built by joining the output directory
+    path with the supplied prefix and the timetuple which is used to
+    construct the suffix/timestamp
+    """
+    output_file_name = prefix
+    output_file_name += str(timetuple[0])
+    output_file_name += str(timetuple[1]).zfill(2)
+    output_file_name += str(timetuple[2]).zfill(2)
+    output_file_name += str(timetuple[3]).zfill(2)
+    output_file_name += str(timetuple[4]).zfill(2)
+    output_file_name += str(timetuple[5]).zfill(2)
+    output_file_name = os.path.join(output_dir, output_file_name)
+    return output_file_name
+    
