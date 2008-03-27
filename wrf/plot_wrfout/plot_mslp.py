@@ -43,47 +43,8 @@ else:
     import pywrf.viz.utils as vu
     import pywrf.wrf.utils as wu
 
-def calculate_mslp(vars_dict, time_idx):
-    """Pull out the necessary variables from the wrfout file and call
-    wu.calculate_slp to generate the mslp field.
-    """
-    # accessing the times in the nc_file one at a time and
-    # using the .copy() method reduce the memory footprint
-    perturbation_pressure = vars_dict['P'].get_value()[time_idx].copy()
-    base_pressure = vars_dict['PB'].get_value()[time_idx].copy()
-    perturbation_geopotential = vars_dict['PH'].get_value()[time_idx].copy()
-    base_geopotential = vars_dict['PHB'].get_value()[time_idx].copy()
-    temperature = vars_dict['T'].get_value()[time_idx].copy()
-    mixing_ratio = vars_dict['QVAPOR'].get_value()[time_idx].copy()
-    mslp = wu.calculate_slp(
-      perturbation_pressure, 
-      base_pressure,
-      perturbation_geopotential,
-      base_geopotential,
-      temperature,
-      mixing_ratio)
-    #del perturbation_pressure, base_pressure
-    #del perturbation_geopotential, base_geopotential
-    #del temperature, mixing_ratio
-    return mslp
-   
-def generate_output_file_name(output_dir, prefix, timetuple):
-    """Returns the output file name built by joining the output directory
-    path with the supplied prefix and the timetuple from which it should
-    construct the suffix/timestamp
-    """
-    output_file_name = prefix
-    output_file_name += str(timetuple[0])
-    output_file_name += str(timetuple[1]).zfill(2)
-    output_file_name += str(timetuple[2]).zfill(2)
-    output_file_name += str(timetuple[3]).zfill(2)
-    output_file_name += str(timetuple[4]).zfill(2)
-    output_file_name += str(timetuple[5]).zfill(2)
-    output_file_name = os.path.join(output_dir, output_file_name)
-    return output_file_name
-    
-
-def generate_plots(input_file_name, output_dir=None):
+  
+def generate_frames(input_file_name, output_dir=None):
     """
     Plot the mslp from a single wrfout file. It can be run from the
     command line as a standalone script or imported into another script and
@@ -134,17 +95,33 @@ def generate_plots(input_file_name, output_dir=None):
     lon = vars_dict['XLONG'].get_value()[0]
     lat = vars_dict['XLAT'].get_value()[0]
 
+    #for time_idx in [0]:
     for time_idx in range(len(times)):
         vu.write_to_log_file(log_file, 
           '\tprocessing time ' + times[time_idx].ctime())
         time_string = vu.set_time_string('manual', times[time_idx].timetuple())
         title_string = vu.set_title_string('Sea-level pressure', 'hPa', 
           time_string, '', '') 
-        mslp = calculate_mslp(vars_dict, time_idx)
+        mslp = wu.calculate_mslp_wrapper(vars_dict, time_idx)
+        if pwc.plot_wind_vectors:
+            zonal_wind = vars_dict['U10'].get_value()[time_idx].copy()
+            meridional_wind = vars_dict['V10'].get_value()[time_idx].copy()
+            wind_vector = (zonal_wind, meridional_wind)
+        else:
+            wind_vector = None
+        output_file_name = vu.generate_output_file_name(output_dir, 'mslp_', 
+          times[time_idx].timetuple())
         vu.plot_slab(lon, lat, mslp,
           cntr_lvl=pwc.mslp_cntr_lvl[domain],
-          file_name=generate_output_file_name(output_dir, 'mslp_', 
-            times[time_idx].timetuple()),
+          file_name=output_file_name,
+          colorbar=pwc.plot_colorbar,
+          contour_labels=pwc.plot_contour_labels,
+          meridians_delta=pwc.meridians_delta[domain],
+          parallels_delta=pwc.parallels_delta[domain],
+          quiv_skip=pwc.quiv_skip[domain],
+          frame_width=pwc.frame_width[domain],
+          wind_vector=wind_vector,
+          monochrome=pwc.monochrome,
           title_string=title_string
           )
         #del mslp
@@ -161,12 +138,12 @@ if __name__ == '__main__':
         print 'Please try something like:\n\tplot_mslp some_wrfout_file'
         sys.exit()
     elif len(sys.argv) == 2:
-        generate_plots(sys.argv[1])
+        generate_frames(sys.argv[1])
     elif len(sys.argv) == 3:
-        generate_plots(sys.argv[1], sys.argv[2])
+        generate_frames(sys.argv[1], sys.argv[2])
     else:
         warning_message = 'I am ignoring the following arguments:\n'
         for ignored_command_line_argument in sys.argv[3:]:
             warning_message += ignored_command_line_argument + '\n'
         print warning_message
-        generate_plots(sys.argv[1], sys.argv[2])
+        generate_frames(sys.argv[1], sys.argv[2])

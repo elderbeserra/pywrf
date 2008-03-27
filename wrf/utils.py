@@ -572,11 +572,11 @@ def wrf_grid_wrapper(namelist_file='namelist.wps',nest_level=0):
     
     return grid, map
 
-def calculate_slp(p,pb,ph,phb,t,qvapor):
+def calculate_mslp(p,pb,ph,phb,t,qvapor):
     '''
     calculate sea level pressure starting from 'raw' wrf output fields
     usage:
-    >>> calculate_slp(p,pb,ph,phb,t,qvapor)
+    >>> calculate_mslp(p,pb,ph,phb,t,qvapor)
     where the arguments names correspond to the variable names in the 
     wrfout files e.g. p(lvl,lat,lon) or p(time,lvl,lat,lon)
     '''
@@ -602,8 +602,8 @@ def calculate_slp(p,pb,ph,phb,t,qvapor):
        # the zero is for debug purposes
        return cs(z,t_t,p_t,qvapor_t,0).transpose()
     elif len(p.shape) == 4:
-       slp_shape = (p.shape[0], p.shape[2], p.shape[3])
-       slp = n.zeros(slp_shape)
+       mslp_shape = (p.shape[0], p.shape[2], p.shape[3])
+       mslp = n.zeros(mslp_shape)
        for time_idx in range(p.shape[0]):
            # recover the full pressure field by adding perturbation and base
            dummy_p = p[time_idx] + pb[time_idx]
@@ -621,11 +621,36 @@ def calculate_slp(p,pb,ph,phb,t,qvapor):
            z = (dummy_ph_t[:,:,:nz-1] + dummy_ph_t[:,:,1:nz]) / 2.0
            # finally "in one fell sweep"
            # the zero is for debug purposes
-           slp[time_idx] = cs(z,dummy_t_t,dummy_p_t,dummy_qvapor_t,0).transpose()
-       return slp
+           mslp[time_idx] = cs(z,dummy_t_t,dummy_p_t,dummy_qvapor_t,0).transpose()
+       return mslp
     else:
        print 'Wrong shape of the array'
        return
+
+def calculate_mslp_wrapper(vars_dict, time_idx):
+    """Utility function to 
+    pull out the necessary variables from the wrfout file and call
+    calculate_mslp to generate the mslp field.
+    """
+    # accessing the times in the nc_file one at a time and
+    # using the .copy() method reduce the memory footprint
+    perturbation_pressure = vars_dict['P'].get_value()[time_idx].copy()
+    base_pressure = vars_dict['PB'].get_value()[time_idx].copy()
+    perturbation_geopotential = vars_dict['PH'].get_value()[time_idx].copy()
+    base_geopotential = vars_dict['PHB'].get_value()[time_idx].copy()
+    temperature = vars_dict['T'].get_value()[time_idx].copy()
+    mixing_ratio = vars_dict['QVAPOR'].get_value()[time_idx].copy()
+    mslp = calculate_mslp(
+      perturbation_pressure, 
+      base_pressure,
+      perturbation_geopotential,
+      base_geopotential,
+      temperature,
+      mixing_ratio)
+    #del perturbation_pressure, base_pressure
+    #del perturbation_geopotential, base_geopotential
+    #del temperature, mixing_ratio
+    return mslp
 
 def plot_custom_points(map):
     """back by popular demand"""
