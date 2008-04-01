@@ -5,40 +5,8 @@ import sys
 import cPickle
 import subprocess as sp
 
-# VB the following is both host and user specific hence
-hostname = gethostname()
-user = os.getlogin()
-if hostname == 'hn3.its.monash.edu.au':
-    if user == 'vbisign':
-        sys.path.append('/nfs/1/home/vbisign/wrf/pywrf')   
-        import wrf.utils as wu
-        import wrf.pydown.utils as pdu
-    elif user == 'tchubb':
-        print 'Hey Thom where do you keep pywrf on this computer?'
-        sys.exit()
-        sys.path.append('/somewhere/pylib')
-        import pywrf.wrf.utils as wu
-        import pywrf.wrf.pydown.utils as pdu
-elif hostname == 'linux450':
-    # VB Sorry Thom if this is not correct ;)
-    print 'Hey Thom where do you keep pywrf on this computer?'
-    sys.exit()
-    sys.path.append('/somewhere/pylib')
-    import pywrf.wrf.utils as wu
-    import pywrf.wrf.pydown.utils as pdu
-elif hostname == 'val.maths.monash.edu.au' \
-    or hostname == 'valerio-bisignanesis-computer.local':
-    sys.path.append('/Users/val/Desktop/workspace/pywrf')
-    import wrf.utils as wu
-    import wrf.pydown.utils as pdu
-else:
-    print 'Warning: since I do not know this user/'\
-      + 'hostname combination, I am not sure of ' \
-      + ' where to find pywrf.viz.util, I will try\n' \
-      + ' import pywrf.wrf.utils as wu'\
-      + ' import pywrf.wrf.pydown.utils as pdu'
-    import pywrf.wrf.utils as wu
-    import pywrf.wrf.pydown.utils as pdu
+import pywrf.wrf.utils as wu
+import pywrf.wrf.pydown.utils as pdu
 
 
 def phase_description(phase_idx,pp):

@@ -1,42 +1,31 @@
+"""
+repository of wrf utilities
+"""
 import os
-from socket import gethostname
 import sys
-import pylab as p
-import matplotlib.numerix.ma as ma
 import numpy as n
-from string import zfill
+import pylab as p
+from matplotlib.numerix import ma
 from matplotlib.toolkits.basemap import Basemap
+import pywrf.viz.utils as vu
 
-# VB the following is both host and user specific hence
-hostname = gethostname()
-user = os.getlogin()
-if hostname == 'hn3.its.monash.edu.au':
-    if user == 'vbisign':
-        sys.path.append('/nfs/1/home/vbisign/wrf/pywrf')   
-        import viz.utils as vu
-    elif user == 'tchubb':
-        print 'Hey Thom where do you keep pywrf on this computer?'
-        sys.exit()
-        sys.path.append('/somewhere/pylib')
-        import pywrf.viz.utils as vu
-elif hostname == 'linux450':
-    # VB Sorry Thom if this is not correct ;)
-    print 'Hey Thom where do you keep pywrf on this computer?'
-    sys.exit()
-    sys.path.append('/somewhere/pylib')
-    import pywrf.viz.utils as vu
-elif hostname == 'val.maths.monash.edu.au' \
-    or hostname == 'valerio-bisignanesis-computer.local':
-    sys.path.append('/Users/val/Desktop/workspace/pywrf')
-    import viz.utils as vu
-else:
-    print 'Warning: since I do not know this user/'\
-      + 'hostname combination, I am not sure of ' \
-      + ' where to find pywrf.viz.util, I will try\n' \
-      + ' import pywrf.viz.utils as vu'
-    import pywrf.viz.utils as vu
 
- 
+# the syntax to import nio depends on its version. We try all options from the
+# newest to the oldest
+try:
+    import Nio as nio
+except:
+    try:
+        import PyNGL.Nio as nio
+    except:
+        import PyNGL_numpy.Nio as nio
+
+# The following is only needed for hn3.its.monash.edu.au
+# Unfortunately we must get rid of spurious entries in the sys.path that can
+# lead to the loading of conflicting packages
+for dir_idx in range(len(sys.path)-1,-1,-1):
+    if 'python2.4' in sys.path[dir_idx]:
+        sys.path.pop(dir_idx)
 
 a_small_number = 1e-8
 

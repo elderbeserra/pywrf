@@ -17,67 +17,33 @@ Usage:
 # - change the 'data' structure to a dictionary creating appropriate labels 
 # from the dates
 #############################################################################
+import os
+import sys
 
-# This script depends from a lot of external libraries:
-import os, sys
+# the syntax to import nio depends on its version. We try all options from the
+# newest to the oldest
+try:
+    import Nio as nio
+except:
+    try:
+        import PyNGL.Nio as nio
+    except:
+        import PyNGL_numpy.Nio as nio
+
+# The following is only needed for hn3.its.monash.edu.au
+# Unfortunately we must get rid of spurious entries in the sys.path that can
+# lead to the loading of conflicting packages
+for dir_idx in range(len(sys.path)-1,-1,-1):
+    if 'python2.4' in sys.path[dir_idx]:
+        sys.path.pop(dir_idx)
+
 import numpy as n
 import pylab as p
+from matplotlib.numerix import ma
 import grib2
 from string import zfill
-from matplotlib.numerix import ma
-
-# VB the following is both host and user specific hence
-# VB TODO Is giving away in the source login and host names a potential
-# security issue?
-from socket import gethostname
-hostname = gethostname()
-user = os.getlogin()
-if hostname == 'hn3.its.monash.edu.au':
-    import PyNGL.Nio as nio
-    if user == 'vbisign':
-        sys.path.append('/nfs/1/home/vbisign/wrf/pywrf')   
-        import viz.utils as vu
-        from misc.met_utils import *
-        cnvgrib_cmd = 'cnvgrib'
-    elif user == 'tchubb':
-        print 'Hey Thom where do you keep pywrf on this computer?'
-        sys.exit()
-        sys.path.append('/somewhere/pylib')
-        import pywrf.viz.utils as vu
-        from pywrf.misc.met_utils import *
-        cnvgrib_cmd = '???'
-elif hostname == 'linux450':
-    # VB Sorry Thom if this is not correct ;)
-    print 'Hey Thom where do you keep pywrf on this computer?'
-    print 'Hey Thom how do you import pynio on this computer?'
-    sys.exit()
-    import PyNGL_numpy.Nio as nio
-    sys.path.append('/somewhere/pylib')
-    import pywrf.viz.utils as vu
-    from pywrf.misc.met_utils import *
-    cnvgrib_cmd = '???'
-elif hostname == 'val.maths.monash.edu.au' \
-    or hostname == 'valerio-bisignanesis-computer.local':
-    import PyNGL_numpy.Nio as nio
-    sys.path.append('/Users/val/Desktop/workspace/pywrf')
-    import viz.utils as vu
-    from misc.met_utils import *
-    cnvgrib_cmd = '/Users/val/src/cnvgrib-1.1.3/cnvgrib'
-else:
-    print 'Warning: since I do not know this user/'\
-      + 'hostname combination, I am not sure of ' \
-      + ' where to find pywrf.viz.util, I will try\n' \
-      + ' import pywrf.viz.utils as vu\n' \
-      + ' from pywrf.misc.met_utils import *\n' \
-      + ' import PyNGL.Nio as nio\n' \
-      + " cnvgrib_cmd = '???'\n"
-    import pywrf.viz.utils as vu
-    from pywrf.misc.met_utils import *
-    import PyNGL.Nio as nio
-    cnvgrib_cmd = '???'
-
-# VB TODO probably the data directories should be included in the above
-# statement
+import pywrf.viz.utils as vu
+from pywrf.misc.met_utils import *
 #data_directory = '/Users/val/data/laps_nc_files/press/first_try/'
 #sfc_data_directory = '/Users/val/data/laps_surface_data/'
 #data_directory = '/mnt/mac/Users/val/data/laps_nc_files/press/first_try/'
@@ -2078,7 +2044,7 @@ def do_the_encoding(data):
 
          #os.system('cnvgrib -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
          #os.system('/Users/val/src/cnvgrib-1.1.3/cnvgrib -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
-         os.system(cnvgrib_cmd + ' -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
+         os.system('cnvgrib -g21 ' + file_name + ' ' + file_name[:-4] + 'grb')
          os.system('rm ' + file_name)
  
          dummy_idx += 1
