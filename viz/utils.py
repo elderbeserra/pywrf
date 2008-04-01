@@ -1,33 +1,30 @@
 """
 repo of useful functions for visualizing stuff
 """
-
 import os
-from socket import gethostname
+import sys
 
-# VB The following import is host specific
-hostname = gethostname()
-if hostname == 'hn3.its.monash.edu.au':
-    import PyNGL.Nio as nio
-elif hostname == 'linux450':
-    # VB Sorry Thom if this is not correct ;)
-    import PyNGL.Nio as nio
-elif hostname == 'val.maths.monash.edu.au':
+# the syntax to import nio depends on its version. We try all options from the
+# newest to the oldest
+try:
     import Nio as nio
-    #import PyNGL_numpy.Nio as nio
-elif hostname == 'valerio-bisignanesis-computer.local':
-    import Nio as nio
-else:
-    print 'Warning: since I do not know this hostname, I am not sure of ' \
-      + ' the appropriate syntax to import pynio... I will try\n' \
-      + ' import PyNGL.Nio as nio'
-    import PyNGL.Nio as nio
+except:
+    try:
+        import PyNGL.Nio as nio
+    except:
+        import PyNGL_numpy.Nio as nio
+
+# The following is only needed for hn3.its.monash.edu.au
+# Unfortunately we must get rid of spurious entries in the sys.path that can
+# lead to the loading of conflicting packages
+for dir_idx in range(len(sys.path)-1,-1,-1):
+    if 'python2.4' in sys.path[dir_idx]:
+        sys.path.pop(dir_idx)
 
 import time
 import pylab as p
 import matplotlib.numerix.ma as ma
 import numpy as n
-from string import zfill
 from matplotlib.toolkits.basemap import Basemap
 import gc
 
@@ -178,7 +175,7 @@ def set_time_string(model, time):
         return time_string
     elif model == 'LAPS':
         valid_date = str(time[0])
-        valid_time = zfill(str(time[1]),4)
+        valid_time = str(time[1]).zfill(4)
         time_string = valid_date[6:] + ' ' \
           + cardinal_2_month(int(valid_date[4:6])) + ' ' \
           + valid_date[0:4] \
@@ -191,8 +188,8 @@ def set_time_string(model, time):
         time_string = (str(time[2]) + ' ')
         time_string += (cardinal_2_month(time[1]) + ' ')
         time_string += (str(time[0]) + ' ')
-        time_string += (zfill(str(time[3]),2) + ':')
-        time_string += (zfill(str(time[4]),2) + ' ')
+        time_string += (str(time[3]).zfill(2) + ':')
+        time_string += (str(time[4]).zfill(2) + ' ')
         time_string += 'UTC'
         return time_string
     else:
@@ -283,6 +280,7 @@ def plot_slab(lon, lat, slab,
   colorbar = False,
   contour_labels = True,
   monochrome = False,
+  quiverkey_length = 10,
   return_map = False
   ):
     from matplotlib.cm import gist_ncar as cmap
@@ -296,20 +294,34 @@ def plot_slab(lon, lat, slab,
     else:
         fig = p.figure(figsize=figsize)
     if cntr_lvl is not None:
-        if not monochrome:
+        if monochrome:
+            cset = map.contour(lon, lat, slab, cntr_lvl, colors='black')
+        else:
             csetf = map.contourf(lon, lat, slab, 
               cntr_lvl, 
               cmap=cmap)
-        cset = map.contour(lon, lat, slab, cntr_lvl, colors='lightslategray')
+            if wind_vector is None:
+                cset = map.contour(lon, lat, slab, cntr_lvl, colors='lightslategray')
     else:
-        if not monochrome:
+        if monochrome:
+            cset = map.contour(lon, lat, slab, colors='black')
+        else:
             csetf = map.contourf(lon, lat, slab, cmap=cmap)
-        cset = map.contour(lon, lat, slab, colors='lightslategray')
+            if wind_vector is None:
+                cset = map.contour(lon, lat, slab, colors='lightslategray')
     if wind_vector is not None:
         quiv = map.quiver(lon[::quiv_skip,::quiv_skip], 
           lat[::quiv_skip,::quiv_skip],
           wind_vector[0][::quiv_skip,::quiv_skip],
           wind_vector[1][::quiv_skip,::quiv_skip])
+        from scipy.stats import median
+        p.quiverkey(quiv, 
+          0.855, 
+          0.115, 
+          quiverkey_length,
+          str(int(quiverkey_length)) + ' m/s',
+          labelpos='S',
+          coordinates='figure')
     # plot grid outline
     map.plot(lon[0,:],lat[0,:],color='lightslategray')
     map.plot(lon[-1,:],lat[-1,:],color='lightslategray')
@@ -356,7 +368,8 @@ def plot_slab(lon, lat, slab,
         del fig
     if not monochrome:
         del csetf
-    del cset
+    if wind_vector is None:
+        del cset
     if wind_vector is not None:
         del quiv
     gc.collect()
@@ -582,3 +595,112 @@ def generate_output_file_name(output_dir, prefix, timetuple):
     output_file_name = os.path.join(output_dir, output_file_name)
     return output_file_name
     
+def process_command_line_arguments(argv):
+    """
+    Process command line arguments in a consistent fashion for the
+    plot_wrfout elementary scripts.
+    """
+
+    def process_time_window_argument(argument):
+        """
+        Process the time window argument and return a tuple of datetime objects
+        (start_time, end_time)
+        """
+        import datetime
+        try:
+            dummy = (argument).split('-')
+            start_time = dummy[0].split('/')
+            start_time = [int(e) for e in start_time]
+        except:
+            sys.exit('\nERROR:\tI cannot make sense of the time window '
+              + argument + '\n\tI need something like '
+              + 'yyyy/mm/dd/hh/mm/ss-yyyy/mm/dd/hh/mm/ss but will also '
+              + 'cope without hours, minutes or seconds.')
+        # this is only intended to work if we have missing hour, minute, or
+        # seconds. At least the date ought to be complete!
+        while len(start_time) < 6:
+            start_time.append(0)
+        year, month, day, hour, minute, second = start_time
+        start_time = \
+          datetime.datetime(year, month, day, hour, minute, second)
+        end_time = dummy[1].split('/')
+        end_time = [int(e) for e in end_time]
+        # this is only intended to work if we have missing hour, minute, or
+        # seconds. At least the date ought to be complete!
+        while len(end_time) < 6:
+            end_time.append(0)
+        year, month, day, hour, minute, second = end_time
+        end_time = \
+          datetime.datetime(year, month, day, hour, minute, second)
+        #print start_time.ctime(), end_time.ctime()
+        return (start_time, end_time)
+
+    if len(argv) < 2:
+        sys.exit( '\nERROR:\tI need (at least) one file to extract the data from...'
+          + '\n\tPlease try something like:\n\tpython ' + argv[0] \
+          + ' wrfout_dpp_yyyy-mm-dd_hh:mm:ss')
+    else:
+        # Let's store the name of the calling script and considered it
+        # processed
+        caller = argv.pop(0)
+        # let's start with checking that the the first argument is a legit wrfout
+        # file name and that it exists
+        input_file = argv.pop(0)
+        # this should be more stringent, but I don't have time
+        if 'wrfout' not in input_file:
+            sys.exit(
+              '\nERROR:\t' + input_file + ' is not a standard wrf output file'
+              + 'name.\n\tI need something like ' 
+              + 'wrfout_dpp_yyyy-mm-dd_hh:mm:ss')
+        if not os.path.isfile(input_file):
+            sys.exit( '\nERROR:\tfile ' + input_file + ' does not exist!')
+        output_dir = None
+        time_window = None
+        # let's have a look at the arguments left, if any.
+        # every command line argument that is not the input file will come as a
+        # pair flag/value to avoid confusion. If the program cannot make sense of
+        # the input arguments it will bail out with a (possibly helpful) error 
+        # message
+        if '--output_dir' in argv:
+            flag_idx = argv.index('--output_dir')
+            value_idx = flag_idx + 1
+            # the order of the following two statements is important not to
+            # break the way we use pop
+            output_dir = argv.pop(value_idx)
+            flag = argv.pop(flag_idx)
+            if not os.path.isdir(output_dir):
+                sys.exit('\nERROR:\t' + output_dir + 'is not a directory!')
+        if '-o' in argv:
+            flag_idx = argv.index('-o')
+            value_idx = flag_idx + 1
+            # the order of the following two statements is important not to
+            # break the way we use pop
+            output_dir = argv.pop(value_idx)
+            flag = argv.pop(flag_idx)
+            if not os.path.isdir(output_dir):
+                sys.exit('\nERROR:\t' + output_dir + 'is not a directory!')
+        if '--time_window' in argv:
+            flag_idx = argv.index('--time_window')
+            value_idx = flag_idx + 1
+            # the order of the following two statements is important not to
+            # break the way we use pop
+            time_argument = argv.pop(value_idx)
+            flag = argv.pop(flag_idx)
+            time_window = process_time_window_argument(time_argument)
+        if '-t' in argv:
+            flag_idx = argv.index('-t')
+            value_idx = flag_idx + 1
+            # the order of the following two statements is important not to
+            # break the way we use pop
+            time_argument = argv.pop(value_idx)
+            flag = argv.pop(flag_idx)
+            time_window = process_time_window_argument(time_argument)
+        if len(argv) != 0:
+            unknown_arguments = ''
+            for argument in argv:
+                unknown_arguments += argument + '\n\t'
+            sys.exit('\nERROR:\tI do not know how to process the following '
+              + 'arguments:\n\t' + unknown_arguments)
+
+        return input_file, output_dir, time_window
+
