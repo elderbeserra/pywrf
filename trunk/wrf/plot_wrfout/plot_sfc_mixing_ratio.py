@@ -1,7 +1,7 @@
 """
-This script plots the mslp from a single wrfout file. It can be run from the
-command line as a standalone script or imported into another script and
-executed from there.
+This script plots the 2m water vapour mixing ratio from a single wrfout file. 
+It can be run from the command line as a standalone script or imported into 
+another script and executed from there.
 """
 
 import sys
@@ -12,25 +12,25 @@ import pywrf.wrf.utils as wu
   
 def generate_frames(input_file_name, output_dir=None, time_window=None):
     """
-    Generate the the mslp frames from a single wrfout file and save them in 
-    the chosen directory. When the script is called as a standalone program
-    this function is called under the hood.
+    Generate the the sfc_water vapour mixing ratio frames from a single wrfout
+    file and save them in the chosen directory. When the script is called as 
+    a standalone program this function is called under the hood.
     NB if no output directory is supplied the default will be the directory
     from which the script is invoked.
 
     Usage
-    >>> import plot_mslp
-    >>> plot_mslp(input_file_name, output_dir, time_window)
+    >>> import plot_sfc_mixing_ratio
+    >>> plot_sfc_mixing_ratio(input_file_name, output_dir, time_window)
     """
     # if the output directory is not specified or invalid
     if output_dir is None \
       or not os.path.isdir(output_dir):
         output_dir = os.getcwd()
 
-    log_file = os.path.join(output_dir, 'plot_mslp.log')
+    log_file = os.path.join(output_dir, 'plot_sfc_mixing_ratio.log')
     if os.path.isfile(log_file):
         os.remove(log_file)
-    vu.write_to_log_file(log_file, 'Started execution of plot_mslp.py')
+    vu.write_to_log_file(log_file, 'Started execution of plot_sfc_mixing_ratio.py')
 
     # let's check for a local plot_wrfout_config or use default
     if os.path.isfile(os.path.join(os.getcwd(),'plot_wrfout_config.py')):
@@ -79,18 +79,20 @@ def generate_frames(input_file_name, output_dir=None, time_window=None):
         vu.write_to_log_file(log_file, 
           '\tprocessing time ' + times[time_idx].ctime())
         time_string = vu.set_time_string('manual', times[time_idx].timetuple())
-        title_string = vu.set_title_string('pressure', 'hPa', 
-          time_string, 'Sea-level') 
-        mslp = wu.calculate_mslp_wrapper(vars_dict, time_idx)
+        title_string = vu.set_title_string('water vapour mixing ratio', 'g/kg', 
+          time_string, 'sfc',) 
+        mixing_ratio = vars_dict['Q2'].get_value()[time_idx].copy()
+        # kg/kg -> g/kg
+        mixing_ratio = mixing_ratio * 1000.
         wind_vector = None
         if pwc.plot_wind_vectors:
             zonal_wind = vars_dict['U10'].get_value()[time_idx].copy()
             meridional_wind = vars_dict['V10'].get_value()[time_idx].copy()
             wind_vector = (zonal_wind, meridional_wind)
-        output_file_name = vu.generate_output_file_name(output_dir, 'mslp_', 
-          times[time_idx].timetuple())
-        vu.plot_slab(lon, lat, mslp,
-          cntr_lvl=pwc.mslp_cntr_lvl[domain],
+        output_file_name = vu.generate_output_file_name(output_dir,
+          'sfc_mix_ratio_', times[time_idx].timetuple())
+        vu.plot_slab(lon, lat, mixing_ratio,
+          cntr_lvl=pwc.sfc_mixing_ratio_cntr_lvl[domain],
           file_name=output_file_name,
           colorbar=pwc.plot_colorbar,
           contour_labels=pwc.plot_contour_labels,
@@ -103,13 +105,14 @@ def generate_frames(input_file_name, output_dir=None, time_window=None):
           quiverkey_length=pwc.quiverkey_length[domain],
           title_string=title_string
           )
-        #del mslp
+        #del mixing_ratio
 
     input_file.close()
     #del lon, lat, input_file, vars_dict
     #gc.collect()
 
-    vu.write_to_log_file(log_file, 'Completed execution of plot_mslp.py')
+    vu.write_to_log_file(log_file, 
+      'Completed execution of plot_sfc_mixing_ratio.py')
 
 if __name__ == '__main__':
     input_file, output_dir, time_window = \
