@@ -7,7 +7,11 @@
 # Refer to document "F2PY Users Guide and Reference Manual" to understand what
 # the commands do.
 
+# the long way
 f2py from_wrf_to_grads.f90 -m from_wrf_to_grads -h from_wrf_to_grads.pyf
 vim from_wrf_to_grads.pyf 
 f2py -c --help-fcompiler
 f2py -c from_wrf_to_grads.pyf from_wrf_to_grads.f90 --fcompiler=gnu95
+
+# the short way
+f2py -c -m from_wrf_to_grads from_wrf_to_grads.f90 --fcompiler=gnu95
